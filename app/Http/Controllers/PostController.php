@@ -33,8 +33,8 @@ public function find($id) {
 public function create(Request $request) {
     $posts = new Post();
 
-    $posts->title = $request->title();
-    $posts->content = $request->content();
+    $posts->title = $request->title;
+    $posts->content = $request->content;
     $posts->save();
 
     return redirect()->route('posts.index')->with('success', 'Post created successfully');
@@ -55,9 +55,10 @@ public function update(Request $request, $id) {
 }
 
 public function delete($id) {
-   $posts = Post::delete($id);
+   $posts = Post::find($id);
 
-   return redirect()->route('posts.index')->with('success', 'Post deleted successfully');
+   $posts->delete();
 
+return redirect()->route('posts.index')->with('success', 'Post deleted successfully');
 }
 }
