@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CommunityController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\PostController as PostController;
@@ -20,4 +21,9 @@ require __DIR__.'/auth.php';
 
  Route::middleware(['auth'])->group(function () {
     Route::resource('posts', PostController::class);
+});
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('communities', CommunityController::class);
 });

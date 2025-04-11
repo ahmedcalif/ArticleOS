@@ -15,6 +15,8 @@ return new class extends Migration
         $table->unsignedInteger('id')->autoIncrement();
         $table->string('name', 50)->unique()->nullable(false);
         $table->text('description')->nullable();
+        $table->text('rules')->nullable();
+        $table->boolean('is_private')->default(false);
         $table->foreignId('creator_id')->nullable(false);
         $table->timestamp('created_at')->useCurrent();
         $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
@@ -23,8 +25,7 @@ return new class extends Migration
         
         $table->foreign('creator_id')->references('id')->on('users')->onDelete('cascade');
     });
-} 
-
+}
     /**
      * Reverse the migrations.
      */

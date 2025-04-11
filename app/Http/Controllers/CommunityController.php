@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Community as Community;
+use Inertia\Inertia;
+use Inertia\Response;
+use Illuminate\Support\Facades\Auth;
 
 class CommunityController extends Controller
 {
@@ -39,13 +43,13 @@ class CommunityController extends Controller
             'is_private' => 'boolean',
         ]);
         
-        $community = Community::create([
-            ...$validated,
-            'user_id' => auth()->id(), // Creator/owner
-        ]);
+      $community = Community::create([
+    ...$validated,
+    'creator_id' => Auth::id()  // Changed from 'user_id'
+]); 
         
         // Automatically add creator as a member and moderator
-        $community->members()->attach(auth()->id(), ['is_moderator' => true]);
+        $community->members()->attach(Auth::id(), ['is_moderator' => true]);
         
         return redirect()->route('communities.show', $community)
             ->with('success', 'Community created successfully');
@@ -63,15 +67,15 @@ class CommunityController extends Controller
         }, 'moderators'])->findOrFail($id);
         
         // Check if user is a member if community is private
-        if ($community->is_private && !$community->members()->where('user_id', auth()->id())->exists()) {
+        if ($community->is_private && !$community->members()->where('user_id', Auth::id())->exists()) {
             return redirect()->route('communities.index')
                 ->with('error', 'This community is private');
         }
         
         return Inertia::render('Communities/Show', [
             'community' => $community,
-            'isMember' => $community->members()->where('user_id', auth()->id())->exists(),
-            'isModerator' => $community->moderators()->where('user_id', auth()->id())->exists(),
+            'isMember' => $community->members()->where('user_id', Auth::id())->exists(),
+            'isModerator' => $community->moderators()->where('user_id', Auth::id())->exists(),
         ]);
     }
 
@@ -83,7 +87,7 @@ class CommunityController extends Controller
         $community = Community::findOrFail($id);
         
         // Check if user is a moderator
-        if (!$community->moderators()->where('user_id', auth()->id())->exists()) {
+        if (!$community->moderators()->where('user_id', Auth::id())->exists()) {
             return redirect()->route('communities.show', $community)
                 ->with('error', 'You do not have permission to edit this community');
         }
@@ -101,7 +105,7 @@ class CommunityController extends Controller
         $community = Community::findOrFail($id);
         
         // Check if user is a moderator
-        if (!$community->moderators()->where('user_id', auth()->id())->exists()) {
+        if (!$community->moderators()->where('user_id', Auth::id())->exists()) {
             return redirect()->route('communities.show', $community)
                 ->with('error', 'You do not have permission to update this community');
         }
@@ -126,7 +130,7 @@ class CommunityController extends Controller
         $community = Community::findOrFail($id);
         
         // Check if user is the owner
-        if ($community->user_id !== auth()->id()) {
+        if ($community->user_id !== Auth::id()) {
             return redirect()->route('communities.show', $community)
                 ->with('error', 'Only the community owner can delete a community');
         }
@@ -145,12 +149,12 @@ class CommunityController extends Controller
         $community = Community::findOrFail($id);
         
         // If already a member
-        if ($community->members()->where('user_id', auth()->id())->exists()) {
+        if ($community->members()->where('user_id', Auth::id())->exists()) {
             return redirect()->route('communities.show', $community)
                 ->with('info', 'You are already a member of this community');
         }
         
-        $community->members()->attach(auth()->id());
+        $community->members()->attach(Auth::id());
         
         return redirect()->route('communities.show', $community)
             ->with('success', 'You have joined this community');
@@ -164,12 +168,12 @@ class CommunityController extends Controller
         $community = Community::findOrFail($id);
         
         // If not a member
-        if (!$community->members()->where('user_id', auth()->id())->exists()) {
+        if (!$community->members()->where('user_id', Auth::id())->exists()) {
             return redirect()->route('communities.show', $community)
                 ->with('info', 'You are not a member of this community');
         }
         
-        $community->members()->detach(auth()->id());
+        $community->members()->detach(Auth::id());
         
         return redirect()->route('communities.show', $community)
             ->with('success', 'You have left this community');
@@ -183,8 +187,8 @@ class CommunityController extends Controller
         $community = Community::findOrFail($id);
         
         // Check if user is the owner or a moderator
-        if ($community->user_id !== auth()->id() && 
-            !$community->moderators()->where('user_id', auth()->id())->exists()) {
+        if ($community->user_id !== Auth::id() && 
+            !$community->moderators()->where('user_id', Auth::id())->exists()) {
             return redirect()->route('communities.show', $community)
                 ->with('error', 'You do not have permission to add moderators');
         }
@@ -216,7 +220,7 @@ class CommunityController extends Controller
         $community = Community::findOrFail($id);
         
         // Check if user is the owner
-        if ($community->user_id !== auth()->id()) {
+        if ($community->user_id !== Auth::id()) {
             return redirect()->route('communities.show', $community)
                 ->with('error', 'Only the community owner can remove moderators');
         }
