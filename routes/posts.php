@@ -18,7 +18,6 @@ Route::put('/posts/{id}', [PostController::class, 'update'])->name('posts.update
 
 Route::delete('/posts/{id}', [PostController::class, 'destroy'])->name('posts.destroy');
 
-// only for users that are logged in
 Route::middleware(['auth'])->group(function () {
     Route::resource('posts', PostController::class);
 });
