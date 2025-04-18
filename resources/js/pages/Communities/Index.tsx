@@ -1,17 +1,44 @@
+// resources/js/Pages/Communities/Index.tsx
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Community } from '@/types/types';
-import { PageProps } from '@/types/types';
+import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
 import { Link } from '@inertiajs/react';
 import { Globe, Lock, MessageSquare, Users } from 'lucide-react';
-import React from 'react';
+import React, { JSX } from 'react';
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    [key: string]: any;
+}
+
+interface Auth {
+    user: User | null;
+}
+
+interface Community {
+    id: number;
+    name: string;
+    description: string | null;
+    is_private: boolean;
+    posts_count: number;
+    members_count: number;
+    [key: string]: any;
+}
+
+interface PageProps {
+    auth: Auth;
+    errors: Record<string, string[]>;
+    [key: string]: any;
+}
 
 interface IndexProps extends PageProps {
     communities: Community[];
 }
 
-const Index: React.FC<IndexProps> = ({ auth, communities }) => {
+const Index: React.FC<IndexProps> & { layout?: (page: React.ReactNode) => JSX.Element } = ({ auth, communities }) => {
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
             <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -92,5 +119,7 @@ const Index: React.FC<IndexProps> = ({ auth, communities }) => {
         </div>
     );
 };
+
+Index.layout = (page: React.ReactNode) => <AppSidebarLayout>{page}</AppSidebarLayout>;
 
 export default Index;

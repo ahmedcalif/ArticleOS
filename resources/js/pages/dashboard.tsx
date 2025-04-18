@@ -4,7 +4,7 @@ import { type BreadcrumbItem } from '@/types';
 import type { Post } from '@/types/types';
 import { Head } from '@inertiajs/react';
 
-const breadcrumbs: BreadcrumbItem[] = [
+export const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',

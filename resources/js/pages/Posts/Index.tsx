@@ -43,7 +43,6 @@ export default function PostsPage({ posts }: PostsPageProps) {
             </div>
         );
     } else {
-        // Single post display
         return (
             <div className="p-4">
                 <RedditCard
