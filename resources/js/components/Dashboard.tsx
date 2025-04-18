@@ -5,7 +5,6 @@ import type { Post, Vote } from '@/types/types';
 import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
 import React from 'react';
 
-// Interface that matches your Post interface with additional display properties
 interface RedditCardProps {
     id: number;
     title: string;

@@ -1,6 +1,7 @@
 import { DashboardComponent } from '@/components/Dashboard';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import type { Post } from '@/types/types';
 import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -10,11 +11,11 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Dashboard() {
+export default function Dashboard({ posts }: { posts: Post[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <DashboardComponent />
+            <DashboardComponent posts={posts} />
         </AppLayout>
     );
 }

@@ -10,9 +10,16 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+  Route::get('dashboard', function () {
+    $posts = App\Models\Post::with(['user'])
+        ->withCount('comments')
+        ->orderBy('created_at', 'desc')
+        ->get();
+        
+    return Inertia::render('dashboard', [
+        'posts' => $posts
+    ]);
+})->name('dashboard'); 
 });
 
 require __DIR__.'/settings.php';
