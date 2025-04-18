@@ -36,4 +36,5 @@ public function up(): void
     {
         Schema::dropIfExists('posts');
     }
+    
 };

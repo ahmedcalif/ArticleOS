@@ -10,12 +10,17 @@ class Vote extends Model
     /** @use HasFactory<\Database\Factories\VotesFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'votable_id',
-        'votable_type',
-        'value'
-    ];
+     protected $fillable = ['user_id', 'post_id', 'is_upvote'];
+
+      public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    
+    public function post()
+    {
+        return $this->belongsTo(Post::class);
+    }
     
     public $timestamps = false;
 

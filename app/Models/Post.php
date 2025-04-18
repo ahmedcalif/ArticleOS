@@ -37,4 +37,17 @@ class Post extends Model
 {
     return $this->hasMany(Comment::class);
 } 
+public function votes()
+{
+    return $this->hasMany(Vote::class);
 }
+
+// Method to get the vote count
+public function getVoteCountAttribute()
+{
+    return $this->votes->sum(function ($vote) {
+        return $vote->is_upvote ? 1 : -1;
+    });
+}
+}
+

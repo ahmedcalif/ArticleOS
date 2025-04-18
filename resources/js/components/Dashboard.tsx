@@ -1,19 +1,57 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import type { Post, Vote } from '@/types/types';
 import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
 import React from 'react';
 
+// Interface that matches your Post interface with additional display properties
 interface RedditCardProps {
+    id: number;
     title: string;
     content: string;
+    url?: string;
     userId?: number;
-    username: string;
-    createdAt: string | Date;
-    updatedAt: string | Date;
+    username?: string;
+    subreddit?: string;
+    votes?: number | Vote[];
+    commentCount?: number;
+    userAvatar?: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
-export const RedditCard: React.FC<RedditCardProps> = ({ title, content, subreddit, timePosted, content, votes, commentCount, userAvatar }) => {
+// Format relative time (e.g., "5 hours ago")
+const formatRelativeTime = (dateString: string | undefined) => {
+    if (!dateString) return 'recently';
+
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+
+    return date.toLocaleDateString();
+};
+
+export const RedditCard: React.FC<RedditCardProps> = ({
+    id,
+    title,
+    content,
+    subreddit = 'general',
+    username = 'anonymous',
+    votes = 0,
+    commentCount = 0,
+    userAvatar,
+    created_at,
+}) => {
+    const timePosted = formatRelativeTime(created_at);
+
+    const voteCount = Array.isArray(votes) ? votes.reduce((count, vote) => count + (vote.is_upvote ? 1 : -1), 0) : votes;
+
     return (
         <Card className="w-full max-w-2xl cursor-pointer transition-colors hover:border-gray-400">
             <div className="flex">
@@ -21,7 +59,7 @@ export const RedditCard: React.FC<RedditCardProps> = ({ title, content, subreddi
                     <Button variant="ghost" size="icon" className="h-6 w-6">
                         <ThumbsUp className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm font-medium">{votes}</span>
+                    <span className="text-sm font-medium">{voteCount}</span>
                     <Button variant="ghost" size="icon" className="h-6 w-6">
                         <ThumbsDown className="h-4 w-4" />
                     </Button>
@@ -67,29 +105,52 @@ export const RedditCard: React.FC<RedditCardProps> = ({ title, content, subreddi
         </Card>
     );
 };
+interface DashboardProps {
+    posts: Post[];
+}
 
-export function DashboardComponent() {
+// Helper function to get username string from User object or username property
+const getUsernameString = (post: Post): string => {
+    if (typeof post.username === 'string') {
+        return post.username;
+    } else if (post.username && 'name' in post.username) {
+        return post.username.name;
+    }
+    return 'anonymous';
+};
+
+// Helper function to count upvotes
+const countVotes = (votes: Vote[] | undefined): number => {
+    if (!votes || votes.length === 0) return 0;
+
+    return votes.reduce((count, vote) => {
+        return count + (vote.is_upvote ? 1 : -1);
+    }, 0);
+};
+
+export function DashboardComponent({ posts }: DashboardProps) {
+    console.log('Dashboard posts:', posts);
+
+    if (!posts || posts.length === 0) {
+        return <div className="p-4 text-center">No posts found. Be the first to create one!</div>;
+    }
+
     return (
         <div className="space-y-4 p-4">
-            <RedditCard
-                title="Just watched Dune: Part Two and was blown away!"
-                username="scifi_enthusiast"
-                subreddit="movies"
-                timePosted="5 hours ago"
-                content="The cinematography and sound design were incredible. Denis Villeneuve really outdid himself with this sequel. The character development was also much stronger than in Part One. What did you all think about it?"
-                votes={842}
-                commentCount={156}
-            />
-
-            <RedditCard
-                title="TIL that honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still perfectly good to eat."
-                username="history_buff"
-                subreddit="todayilearned"
-                timePosted="7 hours ago"
-                content="The unique chemical composition of honey, including its low moisture content and acidic pH, creates an environment where bacteria cannot survive. Honey is also naturally antimicrobial, further preventing spoilage."
-                votes={1432}
-                commentCount={237}
-            />
+            {posts.map((post) => (
+                <RedditCard
+                    key={post.id}
+                    id={post.id}
+                    title={post.title}
+                    content={post.content}
+                    username={getUsernameString(post)}
+                    subreddit="general" // You can replace this with community name if available
+                    votes={post.votes ? countVotes(post.votes) : 0}
+                    commentCount={post.comments_count || 0}
+                    created_at={post.created_at}
+                    updated_at={post.updated_at}
+                />
+            ))}
         </div>
     );
 }

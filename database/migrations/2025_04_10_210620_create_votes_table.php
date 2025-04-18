@@ -11,18 +11,16 @@ return new class extends Migration
      */
  public function up(): void
 {
-    Schema::create('votes', function (Blueprint $table) {
-        $table->unsignedInteger('id')->autoIncrement();
-        $table->foreignId('user_id')->nullable(false);
-        $table->unsignedInteger('votable_id')->nullable(false);
-        $table->enum('votable_type', ['post', 'comment'])->nullable(false);
-        $table->tinyInteger('value')->nullable(false); 
-        $table->timestamp('created_at')->useCurrent();
-        
-        $table->unique(['user_id', 'votable_id', 'votable_type'], 'user_votable');
-        
-        $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-    });
+   
+Schema::create('votes', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->onDelete('cascade');
+    $table->foreignId('post_id')->constrained()->onDelete('cascade');
+    $table->boolean('is_upvote');
+    $table->timestamps();
+    
+    $table->unique(['user_id', 'post_id']);
+});
 } 
     /**
      * Reverse the migrations.

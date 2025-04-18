@@ -1,19 +1,11 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Community } from '@/types/types';
 import { PageProps } from '@/types/types';
 import { Link } from '@inertiajs/react';
 import { Globe, Lock, MessageSquare, Users } from 'lucide-react';
 import React from 'react';
-
-interface Community {
-    id: number;
-    name: string;
-    description: string | null;
-    is_private: boolean;
-    posts_count: number;
-    members_count: number;
-}
 
 interface IndexProps extends PageProps {
     communities: Community[];
