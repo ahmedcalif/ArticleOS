@@ -6,16 +6,14 @@ import React from 'react';
 
 interface RedditCardProps {
     title: string;
-    username: string;
-    subreddit: string;
-    timePosted: string;
     content: string;
-    votes: number;
-    commentCount: number;
-    userAvatar?: string;
+    userId?: number;
+    username: string;
+    createdAt: string | Date;
+    updatedAt: string | Date;
 }
 
-export const RedditCard: React.FC<RedditCardProps> = ({ title, username, subreddit, timePosted, content, votes, commentCount, userAvatar }) => {
+export const RedditCard: React.FC<RedditCardProps> = ({ title, content, subreddit, timePosted, content, votes, commentCount, userAvatar }) => {
     return (
         <Card className="w-full max-w-2xl cursor-pointer transition-colors hover:border-gray-400">
             <div className="flex">
