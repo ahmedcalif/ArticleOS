@@ -5,7 +5,7 @@ type FlashType = 'success' | 'error' | 'warning' | 'info';
 
 interface FlashMessage {
     message: string | null;
-    type: FlashType | string;
+    type: FlashType;
 }
 
 interface PageProps {
@@ -15,7 +15,7 @@ interface PageProps {
 
 interface FlashData {
     message: string | null;
-    type: FlashType | string;
+    type: FlashType;
     isVisible: boolean;
     hasMessage: boolean;
 }

@@ -1,4 +1,7 @@
-import { RedditCard } from '@/components/Dashboard';
+import PostsList from '@/components/Dashboard/PostList';
+import AppLayout from '@/layouts/app-layout';
+import { Head } from '@inertiajs/react';
+import React from 'react';
 
 interface Post {
     id: number;
@@ -8,55 +11,31 @@ interface Post {
     userId?: number;
     createdAt?: string | Date;
     updatedAt?: string | Date;
-    username?: string;
-    subreddit?: string;
+    username?: string | any;
+    community?: any;
+    community_id?: number;
+    votes?: any;
+    comments_count?: number;
 }
 
 interface PostsPageProps {
     posts: Post[] | Post;
 }
 
-export default function PostsPage({ posts }: PostsPageProps) {
-    console.log('Received posts:', posts);
+const PostsPage: React.FC<PostsPageProps> = ({ posts }) => {
+    const postsArray = Array.isArray(posts) ? posts : [posts];
 
-    if (!posts) {
-        return <div className="p-4 text-center">No posts found</div>;
-    }
+    return (
+        <AppLayout>
+            <Head title="Posts" />
+            <div className="py-6">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <h1 className="mb-6 text-2xl font-semibold text-gray-900">All Posts</h1>
+                    <PostsList posts={postsArray} />
+                </div>
+            </div>
+        </AppLayout>
+    );
+};
 
-    if (Array.isArray(posts)) {
-        return (
-            <div className="space-y-4 p-4">
-                {posts.map((post) => (
-                    <RedditCard
-                        key={post.id}
-                        id={post.id}
-                        title={post.title}
-                        content={post.content}
-                        username={post.username || 'anonymous'}
-                        subreddit={post.subreddit || 'general'}
-                        votes={0}
-                        commentCount={0}
-                        created_at={post.createdAt?.toString()}
-                        updated_at={post.updatedAt?.toString()}
-                    />
-                ))}
-            </div>
-        );
-    } else {
-        return (
-            <div className="p-4">
-                <RedditCard
-                    id={posts.id}
-                    title={posts.title}
-                    content={posts.content}
-                    username={posts.username || 'anonymous'}
-                    subreddit={posts.subreddit || 'general'}
-                    votes={0}
-                    commentCount={0}
-                    created_at={posts.createdAt?.toString()}
-                    updated_at={posts.updatedAt?.toString()}
-                />
-            </div>
-        );
-    }
-}
+export default PostsPage;

@@ -18,7 +18,6 @@ Route::get('dashboard', function () {
       ->orderBy('created_at', 'desc')
       ->get();
       
-  // Manually attach community data
   $posts->each(function($post) use ($communities) {
       $post->username = $post->user ? $post->user->name : null;
       

@@ -1,10 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import type { Post, Vote } from '@/types/types';
 import { Link } from '@inertiajs/react';
 import { Bookmark, ChevronDown, MessageSquare, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 interface Community {
     id: number;
@@ -14,16 +13,35 @@ interface Community {
     [key: string]: any;
 }
 
-interface ExtendedPost extends Post {
-    community: Community | null;
+interface User {
+    id: number;
+    name: string;
 }
 
-interface RedditCardProps {
+interface Vote {
+    is_upvote: boolean;
+    [key: string]: any;
+}
+
+interface Post {
     id: number;
     title: string;
     content: string;
     url?: string;
-    userId?: number;
+    user_id?: number;
+    username?: string | User;
+    community?: Community | null;
+    community_id?: number;
+    votes?: Vote[] | number;
+    comments_count?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+interface PostCardProps {
+    id: number;
+    title: string;
+    content: string;
     username?: string;
     community?: Community | null;
     community_id?: number;
@@ -50,7 +68,7 @@ const formatRelativeTime = (dateString: string | undefined) => {
     return date.toLocaleDateString();
 };
 
-export const RedditCard: React.FC<RedditCardProps> = ({
+export const PostCard: React.FC<PostCardProps> = ({
     id,
     title,
     content,
@@ -68,57 +86,10 @@ export const RedditCard: React.FC<RedditCardProps> = ({
     const contentPreviewLength = 150;
     const shouldTruncate = content.length > contentPreviewLength;
 
-    // Enhanced debugging
-    useEffect(() => {
-        console.group(`Post ${id} Debug Data`);
-        console.log('Complete post props:', {
-            id,
-            title,
-            content,
-            community,
-            community_id,
-            username,
-            votes,
-            commentCount,
-            created_at,
-        });
-
-        // Type checking for community
-        console.log('Community type:', community ? typeof community : 'undefined/null');
-        if (community) {
-            console.log('Community is array?', Array.isArray(community));
-            console.log('Community keys:', Object.keys(community));
-            console.log('Community values:', Object.values(community));
-            console.log('Community prototype:', Object.getPrototypeOf(community));
-            console.log('Community JSON string:', JSON.stringify(community));
-        }
-
-        // Community ID check
-        console.log('Community ID type:', typeof community_id);
-        console.log('Community ID value:', community_id);
-
-        console.groupEnd();
-    }, [id, title, community, community_id]);
-
-    // More robust community name determination
+    // Get community name
     let communityName = 'general';
-
-    if (community) {
-        if (typeof community === 'object') {
-            if ('name' in community && community.name) {
-                communityName = community.name;
-                console.log(`Using community name from object: ${communityName}`);
-            } else {
-                console.log('Community object exists but has no name property!', community);
-            }
-        } else if (typeof community === 'string') {
-            communityName = community;
-            console.log(`Using community as string: ${communityName}`);
-        } else {
-            console.log(`Unknown community type: ${typeof community}`);
-        }
-    } else {
-        console.log(`No community object, using default: ${communityName}`);
+    if (community && typeof community === 'object' && 'name' in community) {
+        communityName = community.name;
     }
 
     const voteCount = Array.isArray(votes) ? votes.reduce((count, vote) => count + (vote.is_upvote ? 1 : -1), 0) : votes;
@@ -178,8 +149,8 @@ export const RedditCard: React.FC<RedditCardProps> = ({
                                 </Button>
                             </div>
 
-                            <Button variant="outline" size="sm" className="mt-2 ml-auto text-xs sm:mt-0" onClick={handleShowMoreClick}>
-                                <Link href={`/posts/${id}`}>
+                            <Button variant="outline" size="sm" className="mt-2 ml-auto text-xs sm:mt-0" asChild>
+                                <Link href={route('posts.show', id)}>
                                     <span>Show More</span>
                                     <ChevronDown className="ml-1 h-3 w-3" />
                                 </Link>
@@ -192,15 +163,15 @@ export const RedditCard: React.FC<RedditCardProps> = ({
     );
 };
 
-interface DashboardProps {
-    posts: ExtendedPost[];
+interface PostsListProps {
+    posts: Post[];
     onShowPost?: (id: number) => void;
 }
 
 const getUsernameString = (post: Post): string => {
     if (typeof post.username === 'string') {
         return post.username;
-    } else if (post.username && 'name' in post.username) {
+    } else if (post.username && typeof post.username === 'object' && 'name' in post.username) {
         return post.username.name;
     }
     return 'anonymous';
@@ -214,23 +185,7 @@ const countVotes = (votes: Vote[] | undefined): number => {
     }, 0);
 };
 
-export function DashboardComponent({ posts, onShowPost = () => {} }: DashboardProps) {
-    // Enhanced dashboard logging
-    useEffect(() => {
-        console.group('Dashboard Component Debug');
-        console.log('Posts array length:', posts?.length);
-        console.log('First post complete data:', posts && posts.length > 0 ? posts[0] : 'No posts');
-        console.log('All posts community data:');
-
-        posts?.forEach((post, index) => {
-            console.log(`Post #${index} (ID: ${post.id}):`, {
-                community: post.community,
-                community_id: post.community_id,
-            });
-        });
-        console.groupEnd();
-    }, [posts]);
-
+const PostsList: React.FC<PostsListProps> = ({ posts, onShowPost = () => {} }) => {
     if (!posts || posts.length === 0) {
         return <div className="p-4 text-center">No posts found. Be the first to create one!</div>;
     }
@@ -238,7 +193,7 @@ export function DashboardComponent({ posts, onShowPost = () => {} }: DashboardPr
     return (
         <div className="space-y-4 p-4">
             {posts.map((post) => (
-                <RedditCard
+                <PostCard
                     key={post.id}
                     id={post.id}
                     title={post.title}
@@ -246,7 +201,7 @@ export function DashboardComponent({ posts, onShowPost = () => {} }: DashboardPr
                     username={getUsernameString(post)}
                     community={post.community}
                     community_id={post.community_id}
-                    votes={post.votes ? countVotes(post.votes) : 0}
+                    votes={post.votes ? (Array.isArray(post.votes) ? countVotes(post.votes) : post.votes) : 0}
                     commentCount={post.comments_count || 0}
                     created_at={post.created_at}
                     updated_at={post.updated_at}
@@ -255,4 +210,6 @@ export function DashboardComponent({ posts, onShowPost = () => {} }: DashboardPr
             ))}
         </div>
     );
-}
+};
+
+export default PostsList;

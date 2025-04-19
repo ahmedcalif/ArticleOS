@@ -3,13 +3,11 @@ import { Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import React from 'react';
 
-interface AppLayoutProps {
+interface CommunitiesLayoutProps {
     children: React.ReactNode;
-    createButtonText?: string;
-    createButtonLink?: string;
 }
 
-const AppLayout: React.FC<AppLayoutProps> = ({ children, createButtonText = 'Create Post', createButtonLink = '/posts/create' }) => {
+const CommunitiesLayout: React.FC<CommunitiesLayoutProps> = ({ children }) => {
     return (
         <div className="min-h-screen bg-gray-50">
             <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
@@ -30,11 +28,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, createButtonText = 'Cre
                                 </Link>
                             </nav>
                         </div>
+
                         <div>
                             <Button asChild className="flex items-center">
-                                <Link href={createButtonLink}>
+                                <Link href={route('communities.create')}>
                                     <Plus className="mr-1 h-4 w-4" />
-                                    {createButtonText}
+                                    Create Community
                                 </Link>
                             </Button>
                         </div>
@@ -47,4 +46,4 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, createButtonText = 'Cre
     );
 };
 
-export default AppLayout;
+export default CommunitiesLayout;
