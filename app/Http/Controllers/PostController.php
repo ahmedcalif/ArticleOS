@@ -65,6 +65,9 @@ class PostController extends Controller
     // Add current user ID directly to the post object for comparison
     $post->current_user_id = Auth::id();
     $post->is_creator = (Auth::id() === $post->user_id);
+
+  // In PostController.php's show method
+$post->username = $post->user ? $post->user->username : 'anonymous';
         
         $comments = $post->comments->map(function($comment) {
             $comment->username = $comment->user ? $comment->user->name : 'anonymous';

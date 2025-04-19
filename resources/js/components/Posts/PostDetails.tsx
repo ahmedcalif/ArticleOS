@@ -68,6 +68,7 @@ const formatRelativeTime = (dateString: string | undefined) => {
 };
 
 const getUsernameString = (post: Post): string => {
+    console.log('Post UserName', post.username);
     if (typeof post.username === 'string') {
         return post.username;
     } else if (post.username && 'name' in post.username) {
