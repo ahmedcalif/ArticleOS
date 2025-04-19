@@ -1,5 +1,4 @@
 import PostCreateForm from '@/components/Posts/PostCreateForm';
-import { useFlash } from '@/hooks/use-flash';
 import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types/types';
 import { Head } from '@inertiajs/react';
@@ -12,17 +11,14 @@ interface Community {
 
 interface CreateProps extends PageProps {
     communities: Community[];
-    selectedCommunityId?: string;
+    selectedCommunityId?: number;
 }
 
-const Create: React.FC<CreateProps> = ({ communities = [], selectedCommunityId = '', auth }) => {
-    const flash = useFlash();
-
+const Create: React.FC<CreateProps> = ({ communities, selectedCommunityId, auth }) => {
     return (
-        <AppLayout createButtonText="Create Community" createButtonLink={route('communities.create')}>
+        <AppLayout>
             <Head title="Create Post" />
-
-            <PostCreateForm communities={communities} selectedCommunityId={selectedCommunityId} flash={flash} />
+            <PostCreateForm communities={communities} selectedCommunityId={selectedCommunityId} />
         </AppLayout>
     );
 };

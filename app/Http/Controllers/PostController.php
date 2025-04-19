@@ -6,14 +6,10 @@ use App\Models\Comment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Community as Community;
 
 class PostController extends Controller
 {
-    /**
-     * Display a listing of the posts.
-     *
-     * @return \Inertia\Response
-     */
     public function index()
     {
         $posts = Post::with(['user', 'votes'])
@@ -30,16 +26,12 @@ class PostController extends Controller
             ]
         ]);
     }
-
-    /**
-     * Show the form for creating a new post.
-     *
-     * @return \Inertia\Response
-     */
     public function create(Request $request)
     {
+        $communities = Community::all();
         return Inertia::render('Posts/Create', [
-            'community_id' => $request->input('community_id'),
+              'communities' => $communities,
+            'selectedCommunityId' => request('community_id'),
             'auth' => [
                 'logged_in' => Auth::check(),
                 'user_id' => Auth::check() ? Auth::id() : null,
@@ -47,39 +39,25 @@ class PostController extends Controller
             ]
         ]);
     }
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'content' => 'required|string',
+        'community_id' => 'required|exists:communities,id',
+    ]);
 
-    /**
-     * Store a newly created post in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:300',
-            'content' => 'nullable|string',
-            'url' => 'nullable|url|max:500',
-            'community_id' => 'required|exists:communities,id',
-        ]);
+    $post = Post::create([
+        'title' => $validated['title'],
+        'content' => $validated['content'],
+        'user_id' => Auth::id(),
+        'community_id' => $validated['community_id'],
+    ]);
 
-        $post = Post::create([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
-            'url' => $validated['url'] ?? null,
-            'user_id' => Auth::id(),
-            'community_id' => $validated['community_id'],
-        ]);
-
-        return redirect()->route('posts.show', $post->id);
-    }
-
-    /**
-     * Display the specified post.
-     *
-     * @param  int  $id
-     * @return \Inertia\Response
-     */
+    return redirect()->route('posts.show', $post)
+        ->with('success', 'Post created successfully!');
+}
+ 
  public function show($id)
 {
     $post = Post::with(['community', 'user', 'votes'])->findOrFail($id);

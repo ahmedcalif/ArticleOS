@@ -13,41 +13,42 @@ interface Community {
     name: string;
 }
 
-type FlashType = 'success' | 'error' | 'warning' | 'info';
-
 interface FormErrors {
     title?: string;
     content?: string;
     community_id?: string;
-    [key: string]: string | undefined;
 }
 
 interface FlashMessage {
     hasMessage: boolean;
     message: string | null;
-    type: FlashType;
+    type: 'success' | 'error';
 }
 
 interface PostCreateFormProps {
-    communities?: Community[];
-    selectedCommunityId?: string;
+    communities: Community[];
+    selectedCommunityId?: number;
     flash?: FlashMessage;
 }
 
-const PostCreateForm: React.FC<PostCreateFormProps> = ({ communities = [], selectedCommunityId = '', flash = { hasMessage: false } }) => {
+const PostCreateForm: React.FC<PostCreateFormProps> = ({
+    communities = [],
+    selectedCommunityId,
+    flash = { hasMessage: false, message: null, type: 'success' },
+}) => {
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
     const [formData, setFormData] = useState({
         title: '',
         content: '',
-        community_id: selectedCommunityId,
+        community_id: selectedCommunityId || '',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: value,
+            [name]: name === 'community_id' ? Number(value) : value,
         }));
     };
 
@@ -71,20 +72,8 @@ const PostCreateForm: React.FC<PostCreateFormProps> = ({ communities = [], selec
             <h1 className="mb-6 text-3xl font-bold">Create Post</h1>
 
             {flash.hasMessage && (
-                <Alert
-                    className={`mb-6 ${
-                        flash.type === 'success'
-                            ? 'border-green-200 bg-green-50 text-green-800'
-                            : flash.type === 'error'
-                              ? 'border-red-200 bg-red-50 text-red-800'
-                              : flash.type === 'warning'
-                                ? 'border-yellow-200 bg-yellow-50 text-yellow-800'
-                                : 'border-blue-200 bg-blue-50 text-blue-800'
-                    }`}
-                    variant="default"
-                >
-                    {flash.type === 'success' && <CheckCircle2 className="h-4 w-4" />}
-                    {flash.type !== 'success' && <AlertCircle className="h-4 w-4" />}
+                <Alert className={`mb-6 ${flash.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                    {flash.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                     <AlertDescription>{flash.message}</AlertDescription>
                 </Alert>
             )}
@@ -92,13 +81,13 @@ const PostCreateForm: React.FC<PostCreateFormProps> = ({ communities = [], selec
             <Card>
                 <CardHeader>
                     <CardTitle>New Post</CardTitle>
-                    <CardDescription>Share your thoughts, questions, or content with the community</CardDescription>
+                    <CardDescription>Share your thoughts with the community</CardDescription>
                 </CardHeader>
 
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="title">Post Title</Label>
+                            <Label htmlFor="title">Title *</Label>
                             <Input
                                 id="title"
                                 name="title"
@@ -107,60 +96,41 @@ const PostCreateForm: React.FC<PostCreateFormProps> = ({ communities = [], selec
                                 className={errors.title ? 'border-red-500' : ''}
                                 required
                             />
-                            {errors.title && (
-                                <Alert variant="destructive" className="py-2 text-sm">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertDescription>{errors.title}</AlertDescription>
-                                </Alert>
-                            )}
+                            {errors.title && <div className="text-sm text-red-500">{errors.title}</div>}
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="content">Post Content</Label>
+                            <Label htmlFor="content">Content</Label>
                             <Textarea
                                 id="content"
                                 name="content"
                                 value={formData.content}
                                 onChange={handleChange}
                                 className={errors.content ? 'border-red-500' : ''}
-                                rows={10}
-                                required
+                                rows={8}
                             />
-                            {errors.content && (
-                                <Alert variant="destructive" className="py-2 text-sm">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertDescription>{errors.content}</AlertDescription>
-                                </Alert>
-                            )}
+                            {errors.content && <div className="text-sm text-red-500">{errors.content}</div>}
                         </div>
 
-                        {communities.length > 0 && (
-                            <div className="space-y-2">
-                                <Label htmlFor="community_id">Choose Community</Label>
-                                <select
-                                    id="community_id"
-                                    name="community_id"
-                                    value={formData.community_id}
-                                    onChange={handleChange}
-                                    className={`border-input bg-background ring-offset-background w-full rounded-md border px-3 py-2 text-sm ${
-                                        errors.community_id ? 'border-red-500' : ''
-                                    }`}
-                                >
-                                    <option value="">Select a community</option>
-                                    {communities.map((community) => (
-                                        <option key={community.id} value={community.id}>
-                                            {community.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.community_id && (
-                                    <Alert variant="destructive" className="py-2 text-sm">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertDescription>{errors.community_id}</AlertDescription>
-                                    </Alert>
-                                )}
-                            </div>
-                        )}
+                        <div className="space-y-2">
+                            <Label htmlFor="community_id">Community *</Label>
+                            <select
+                                id="community_id"
+                                name="community_id"
+                                value={formData.community_id}
+                                onChange={handleChange}
+                                className={`w-full rounded-md border p-2 ${errors.community_id ? 'border-red-500' : 'border-gray-300'}`}
+                                required
+                            >
+                                <option value="">Select a community</option>
+                                {communities.map((community) => (
+                                    <option key={community.id} value={community.id}>
+                                        {community.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.community_id && <div className="text-sm text-red-500">{errors.community_id}</div>}
+                        </div>
                     </CardContent>
 
                     <CardFooter className="flex justify-end">
