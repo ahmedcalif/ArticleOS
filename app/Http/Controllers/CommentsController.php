@@ -1,38 +1,32 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
-use App\Models\Comment as Comment;
+use App\Models\Comment;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class CommentsController extends Controller
 {
-    // CommentController.php
-
-// Index - Get all comments
-public function index()
-{
-    $comments = Comment::with('user')->get();
-    
-    return Inertia::render('Comments/Index', [
-        'comments' => $comments
-    ]);
-}
-
-// Store - Create a new comment
-  public function store(Request $request)
+    // Index - Get all comments
+    public function index()
     {
+        $comments = Comment::with('user')->get();
+        
+        return Inertia::render('Comments/Index', [
+            'comments' => $comments
+        ]);
+    }
 
-         // Log the incoming request for debugging
+    // Store - Create a new comment
+    public function store(Request $request)
+    {
+        // Log the incoming request for debugging
         Log::info('Comment store request:', [
             'auth_check' => Auth::check(),
             'user_id' => Auth::id(),    
             'request_data' => $request->all()
         ]);
-
 
         if (!Auth::check()) {
             // Return a clear JSON response for API calls
@@ -51,6 +45,7 @@ public function index()
         $validated = $request->validate([
             'content' => 'required|string|max:10000',
             'post_id' => 'required|exists:posts,id',
+            'parent_id' => 'nullable|exists:comments,id', // Added for nested comments
         ]);
         
         // Create the comment with the authenticated user's ID
@@ -58,6 +53,7 @@ public function index()
             'content' => $validated['content'],
             'post_id' => $validated['post_id'],
             'user_id' => Auth::id(),
+            'parent_id' => $validated['parent_id'] ?? null, // Add parent_id if it exists
         ]);
         
         // Add the username for immediate display
@@ -73,21 +69,24 @@ public function index()
         
         return redirect()->back()->with('success', 'Comment added successfully');
     }
-// Edit - Show edit form
-public function edit($id)
-{
-    $comment = Comment::findOrFail($id);
-    
-    // Optional: Check if the user is authorized to edit this comment
-    // if (auth()->id() !== $comment->user_id) { return abort(403); }
-    
-    return Inertia::render('Comments/Edit', [
-        'comment' => $comment
-    ]);
-}
 
-// Update - Process the update
-public function update(Request $request, $id)
+    // Edit - Show edit form
+    public function edit($id)
+    {
+        $comment = Comment::findOrFail($id);
+        
+        // Check if the user is authorized to edit this comment
+        if (Auth::id() !== $comment->user_id) { 
+            return abort(403, 'Unauthorized action.'); 
+        }
+        
+        return Inertia::render('Comments/Edit', [
+            'comment' => $comment
+        ]);
+    }
+
+    // Update - Process the update
+    public function update(Request $request, $id)
     {
         $comment = Comment::findOrFail($id);
         
@@ -102,9 +101,18 @@ public function update(Request $request, $id)
         
         $comment->update($validated);
         
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Comment updated successfully',
+                'comment' => $comment
+            ]);
+        }
+        
         return redirect()->back()->with('success', 'Comment updated successfully');
     }
-public function destroy($id)
+
+    // Delete comment
+    public function destroy($id)
     {
         $comment = Comment::findOrFail($id);
         
@@ -114,6 +122,12 @@ public function destroy($id)
         }
         
         $comment->delete();
+        
+        if (request()->expectsJson()) {
+            return response()->json([
+                'message' => 'Comment deleted successfully'
+            ]);
+        }
         
         return redirect()->back()->with('success', 'Comment deleted successfully');
     }

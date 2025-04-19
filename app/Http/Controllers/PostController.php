@@ -80,62 +80,59 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Inertia\Response
      */
-    public function show($id)
-    {
-        $post = Post::with(['community', 'user', 'comments.user', 'votes'])->findOrFail($id);
-        
-         $isLoggedIn = Auth::check();
+ public function show($id)
+{
+    $post = Post::with(['community', 'user', 'votes'])->findOrFail($id);
+    
+    $isLoggedIn = Auth::check();
     $currentUser = Auth::user();
-        
-        // Format the comments
-        $comments = $post->comments->map(function ($comment) use ($currentUser, $isLoggedIn) {
+    
+   $comments = Comment::with(['user' => function($query) {
+            $query->select('id', 'name', 'username'); // Only get needed fields
+        }])
+        ->where('post_id', $id)
+        ->orderBy('created_at', 'asc')
+        ->get()
+        ->map(function ($comment) {
             return [
                 'id' => $comment->id,
                 'content' => $comment->content,
                 'post_id' => $comment->post_id,
+                'parent_id' => $comment->parent_id,
                 'user_id' => $comment->user_id,
-                'username' => $comment->user ? $comment->user->name : 'anonymous',
+                'username' => $comment->user ? $comment->user->username ?? $comment->user->name : 'anonymous',
                 'created_at' => $comment->created_at,
                 'updated_at' => $comment->updated_at,
-                'can_edit' => $isLoggedIn && $currentUser === $comment->user_id
             ];
-        });
-        
-        return Inertia::render('Posts/Show', [
-            'post' => [
-                'id' => $post->id,
-                'title' => $post->title,
-                'content' => $post->content,
-                'created_at' => $post->created_at,
-                'updated_at' => $post->updated_at,
-                'user_id' => $post->user_id,
-                'username' => $post->user ? $post->user->name : 'anonymous',
-                'community' => $post->community,
-                'community_id' => $post->community_id,
-                'comments_count' => $comments->count(),
-                'votes' => $post->votes,
-                // Embed auth info directly in the post object
-                'current_user_id' => $currentUser,
-                'is_creator' => $isLoggedIn && $currentUser === $post->user_id,
-                'is_logged_in' => $isLoggedIn
-            ],
-            'comments' => $comments,
-            'auth' => [
+        })
+        ->toArray();
+    
+    return Inertia::render('Posts/Show', [
+        'post' => [
+            'id' => $post->id,
+            'title' => $post->title,
+            'content' => $post->content,
+            'created_at' => $post->created_at,
+            'updated_at' => $post->updated_at,
+            'user_id' => $post->user_id,
+            'username' => $post->user ? $post->user->name : 'anonymous',
+            'community' => $post->community,
+            'community_id' => $post->community_id,
+            'comments_count' => $post->comments_count,
+            'votes' => $post->votes,
+            'current_user_id' => $isLoggedIn ? $currentUser->id : null,
+            'is_creator' => $isLoggedIn && $currentUser && $currentUser->id === $post->user_id,
+            'is_logged_in' => $isLoggedIn
+        ],
+        'comments' => $comments, 
+        'auth' => [
             'logged_in' => $isLoggedIn,
             'user_id' => $isLoggedIn ? $currentUser->id : null,
             'user' => $isLoggedIn ? $currentUser : null
         ]
-        ]);
-    }
-
-
-
-    /**
-     * Show the form for editing the specified post.
-     *
-     * @param  int  $id
-     * @return \Inertia\Response
-     */
+    ]);
+} 
+    
     public function edit($id)
     {
         $post = Post::findOrFail($id);
