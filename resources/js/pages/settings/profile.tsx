@@ -43,7 +43,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     };
 
     return (
-        <AppLayout>
+        <AppLayout hideCreateButton>
             <Head title="Profile settings" />
 
             <SettingsLayout>
@@ -127,9 +127,14 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                 <div className="space-y-6">
                     <HeadingSmall title="Account actions" description="Manage your session and account" />
 
-                    <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-                        <LogoutButton variant="secondary">Sign out</LogoutButton>
-                        <DeleteUser />
+                    <div className="space-y-6">
+                        <div>
+                            <LogoutButton variant="secondary">Sign out</LogoutButton>
+                        </div>
+
+                        <div>
+                            <DeleteUser />
+                        </div>
                     </div>
                 </div>
             </SettingsLayout>

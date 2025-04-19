@@ -7,9 +7,18 @@ interface AppLayoutProps {
     children: React.ReactNode;
     createButtonText?: string;
     createButtonLink?: string;
+    hideCreateButton?: boolean;
 }
 
-const AppLayout: React.FC<AppLayoutProps> = ({ children, createButtonText = 'Create Post', createButtonLink = '/posts/create' }) => {
+const AppLayout: React.FC<AppLayoutProps> = ({
+    children,
+    createButtonText = 'Create Post',
+    createButtonLink = '/posts/create',
+    hideCreateButton = false,
+}) => {
+    const isSettingsPage = window.location.pathname.startsWith('/settings');
+    const shouldHideButton = hideCreateButton || isSettingsPage;
+
     return (
         <div className="min-h-screen bg-gray-50">
             <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
@@ -33,18 +42,20 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, createButtonText = 'Cre
                                 </Link>
                             </nav>
                         </div>
-                        <div>
-                            <Button asChild className="flex items-center">
-                                <Link href={createButtonLink}>
-                                    <Plus className="mr-1 h-4 w-4" />
-                                    {createButtonText}
-                                </Link>
-                            </Button>
-                        </div>
+
+                        {!shouldHideButton && (
+                            <div>
+                                <Button asChild className="flex items-center">
+                                    <Link href={createButtonLink}>
+                                        <Plus className="mr-1 h-4 w-4" />
+                                        {createButtonText}
+                                    </Link>
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </header>
-
             <main className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
     );
