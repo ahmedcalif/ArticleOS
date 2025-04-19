@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Post } from '@/types/types';
 import { Link } from '@inertiajs/react';
 import { Globe, Lock, MessageSquare, Users } from 'lucide-react';
 import React from 'react';
@@ -16,6 +17,9 @@ interface Community {
 
 interface CommunitiesListProps {
     communities: Community[];
+}
+interface PostCommunities extends CommunitiesListProps {
+    posts: Post[];
 }
 
 const CommunitiesList: React.FC<CommunitiesListProps> = ({ communities }) => {
