@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import type { Post, Vote } from '@/types/types';
 import { Link } from '@inertiajs/react';
-import { Bookmark, ChevronDown, MessageSquare, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { Bookmark, MessageSquare, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface Community {
@@ -142,49 +142,44 @@ export const RedditCard: React.FC<RedditCardProps> = ({
                     </div>
 
                     <div className="flex-1">
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                <Avatar className="h-5 w-5">
-                                    {userAvatar ? <AvatarImage src={userAvatar} alt={communityName} /> : <AvatarFallback>r/</AvatarFallback>}
-                                </Avatar>
-                                <span className="font-medium">r/{communityName}</span>
-                                <span>•</span>
-                                <span>Posted by u/{username}</span>
-                                <span>•</span>
-                                <span>{timePosted}</span>
-                            </div>
-                            <h3 className="pt-1 text-lg font-medium">{title}</h3>
-                        </CardHeader>
+                        <Link href={`/posts/${id}`}>
+                            <CardHeader className="pb-2">
+                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <Avatar className="h-5 w-5">
+                                        {userAvatar ? <AvatarImage src={userAvatar} alt={communityName} /> : <AvatarFallback>r/</AvatarFallback>}
+                                    </Avatar>
+                                    <span className="font-medium">r/{communityName}</span>
+                                    <span>•</span>
+                                    <span>Posted by u/{username}</span>
+                                    <span>•</span>
+                                    <span>{timePosted}</span>
+                                </div>
+                                <h3 className="pt-1 text-lg font-medium">{title}</h3>
+                            </CardHeader>
 
-                        <CardContent className="pb-2">
-                            <p className="text-sm text-gray-700">
-                                {truncateContent && shouldTruncate ? `${content.substring(0, contentPreviewLength)}...` : content}
-                            </p>
-                        </CardContent>
+                            <CardContent className="pb-2">
+                                <p className="text-sm text-gray-700">
+                                    {truncateContent && shouldTruncate ? `${content.substring(0, contentPreviewLength)}...` : content}
+                                </p>
+                            </CardContent>
 
-                        <CardFooter className="flex flex-wrap border-t border-gray-100 pt-2 pb-2">
-                            <div className="flex flex-grow items-center space-x-4 text-gray-500">
-                                <Button variant="ghost" size="sm" className="flex items-center gap-1 text-xs">
-                                    <MessageSquare className="h-4 w-4" />
-                                    <span>{commentCount} Comments</span>
-                                </Button>
-                                <Button variant="ghost" size="sm" className="flex items-center gap-1 text-xs">
-                                    <Share2 className="h-4 w-4" />
-                                    <span>Share</span>
-                                </Button>
-                                <Button variant="ghost" size="sm" className="flex items-center gap-1 text-xs">
-                                    <Bookmark className="h-4 w-4" />
-                                    <span>Save</span>
-                                </Button>
-                            </div>
-
-                            <Button variant="outline" size="sm" className="mt-2 ml-auto text-xs sm:mt-0" onClick={handleShowMoreClick}>
-                                <Link href={`/posts/${id}`}>
-                                    <span>Show More</span>
-                                    <ChevronDown className="ml-1 h-3 w-3" />
-                                </Link>
-                            </Button>
-                        </CardFooter>
+                            <CardFooter className="flex flex-wrap border-t border-gray-100 pt-2 pb-2">
+                                <div className="flex flex-grow items-center space-x-4 text-gray-500">
+                                    <Button variant="ghost" size="sm" className="flex items-center gap-1 text-xs">
+                                        <MessageSquare className="h-4 w-4" />
+                                        <span>{commentCount} Comments</span>
+                                    </Button>
+                                    <Button variant="ghost" size="sm" className="flex items-center gap-1 text-xs">
+                                        <Share2 className="h-4 w-4" />
+                                        <span>Share</span>
+                                    </Button>
+                                    <Button variant="ghost" size="sm" className="flex items-center gap-1 text-xs">
+                                        <Bookmark className="h-4 w-4" />
+                                        <span>Save</span>
+                                    </Button>
+                                </div>
+                            </CardFooter>
+                        </Link>
                     </div>
                 </div>
             </Card>
