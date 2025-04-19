@@ -63,18 +63,19 @@ class CommunityController extends Controller
                   ->withCount('comments')
                   ->orderBy('created_at', 'desc');
         }, 'moderators'])->findOrFail($id);
+
+       $community->is_member = $community->members()->where('user_id', Auth::id())->exists(); 
         
-        // Check if user is a member if community is private
         if ($community->is_private && !$community->members()->where('user_id', Auth::id())->exists()) {
             return redirect()->route('communities.index')
                 ->with('error', 'This community is private');
         }
         
-        return Inertia::render('Communities/Show', [
-            'community' => $community,
-            'isMember' => $community->members()->where('user_id', Auth::id())->exists(),
-            'isModerator' => $community->moderators()->where('user_id', Auth::id())->exists(),
-        ]);
+    return Inertia::render('Communities/Show', [
+    'community' => $community,
+    'isMember' => $community->members()->where('user_id', Auth::id())->exists(),
+    'isModerator' => $community->moderators()->where('user_id', Auth::id())->exists(),
+]); 
     }
 
     /**

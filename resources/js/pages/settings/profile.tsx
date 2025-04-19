@@ -9,8 +9,10 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import LogoutButton from '@/pages/auth/logout';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -22,7 +24,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 type ProfileForm = {
     name: string;
     email: string;
-}
+};
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
     const { auth } = usePage<SharedData>().props;
@@ -41,7 +43,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout>
             <Head title="Profile settings" />
 
             <SettingsLayout>
@@ -120,7 +122,16 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                     </form>
                 </div>
 
-                <DeleteUser />
+                <Separator className="my-6" />
+
+                <div className="space-y-6">
+                    <HeadingSmall title="Account actions" description="Manage your session and account" />
+
+                    <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+                        <LogoutButton variant="secondary">Sign out</LogoutButton>
+                        <DeleteUser />
+                    </div>
+                </div>
             </SettingsLayout>
         </AppLayout>
     );

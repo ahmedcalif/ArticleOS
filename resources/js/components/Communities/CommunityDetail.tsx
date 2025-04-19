@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link } from '@inertiajs/react';
-import { Calendar, Edit, Globe, Lock, MessageSquare, Settings, Users } from 'lucide-react';
-import React from 'react';
+import { Link, router } from '@inertiajs/react';
+import { Calendar, Globe, Lock, MessageSquare, Settings, Trash2, Users } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface Post {
     id: number;
@@ -34,6 +34,7 @@ interface Community {
     posts_count: number;
     members_count: number;
     created_at: string;
+    creator_id: number; // Added creator_id field
     is_member?: boolean;
     is_admin?: boolean;
     posts?: Post[];
@@ -56,11 +57,35 @@ interface CommunityDetailProps {
 }
 
 const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) => {
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const formattedDate = new Date(community.created_at).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
     });
+
+    // Check if current user is the creator
+    const isCreator = auth.user && auth.user.id === community.creator_id;
+
+    // Handle community deletion
+    const handleDelete = () => {
+        if (confirm('Are you sure you want to delete this community? This action cannot be undone.')) {
+            router.delete(route('communities.destroy', community.id));
+        }
+    };
+
+    // Handle join community
+    const handleJoin = () => {
+        window.location.href = route('communities.join', community.id);
+    };
+
+    // Handle leave community
+    const handleLeave = () => {
+        if (confirm('Are you sure you want to leave this community?')) {
+            window.location.href = route('communities.leave', community.id);
+        }
+    };
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
@@ -88,14 +113,19 @@ const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) =>
                         </div>
 
                         <div className="flex gap-2">
-                            {!community.is_member && auth.user && <Button>Join Community</Button>}
-
-                            {community.is_admin && (
-                                <Button variant="outline" asChild>
-                                    <Link href={route('communities.edit', community.id)}>
-                                        <Edit className="mr-2 h-4 w-4" /> Edit
-                                    </Link>
-                                </Button>
+                            {/* Join/Leave Community Button */}
+                            {auth.user && (
+                                <>
+                                    {!community.is_member ? (
+                                        <Button onClick={handleJoin}>Join Community</Button>
+                                    ) : (
+                                        !isCreator && (
+                                            <Button variant="outline" onClick={handleLeave}>
+                                                Leave Community
+                                            </Button>
+                                        )
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
@@ -200,6 +230,11 @@ const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) =>
                                                         </div>
                                                     </div>
                                                     {member.is_admin && <Badge variant="secondary">Admin</Badge>}
+                                                    {auth.user && auth.user.id === community.creator_id && member.id !== auth.user.id && (
+                                                        <Button size="sm" variant="outline">
+                                                            Manage Role
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -257,6 +292,20 @@ const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) =>
                                             <Settings className="mr-2 h-4 w-4" /> Manage Community
                                         </Link>
                                     </Button>
+                                )}
+
+                                {isCreator && (
+                                    <>
+                                        <Button variant="outline" className="w-full" asChild>
+                                            <Link href={route('communities.edit', community.id)}>
+                                                <Users className="mr-2 h-4 w-4" /> Edit Community
+                                            </Link>
+                                        </Button>
+
+                                        <Button variant="destructive" className="w-full" onClick={handleDelete}>
+                                            <Trash2 className="mr-2 h-4 w-4" /> Delete Community
+                                        </Button>
+                                    </>
                                 )}
                             </CardContent>
                         </Card>
