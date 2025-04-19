@@ -10,10 +10,14 @@ class PostController extends Controller
     // GET /posts
     public function index()
     {
-        $posts = Post::all();
+      $posts = Post::with(['community', 'user', 'votes'])
+                    ->withCount('comments')
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+                    
         return Inertia::render('Posts/Index', [
             'posts' => $posts
-        ]);
+        ]); 
     }
     
     // GET /posts/create
@@ -41,9 +45,18 @@ class PostController extends Controller
     // GET /posts/{id}
     public function show($id)
     {
-        $post = Post::findOrFail($id);
+        $post = Post::with(['community', 'user', 'votes', 'comments.user'])
+                  ->findOrFail($id);
+        
+        // Format comments to include username
+        $comments = $post->comments->map(function($comment) {
+            $comment->username = $comment->user ? $comment->user->name : 'anonymous';
+            return $comment;
+        });
+        
         return Inertia::render('Posts/Show', [
-            'post' => $post
+            'post' => $post,
+            'comments' => $comments
         ]);
     }
     

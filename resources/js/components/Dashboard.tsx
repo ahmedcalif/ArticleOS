@@ -4,7 +4,19 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import type { Post, Vote } from '@/types/types';
 import { Link } from '@inertiajs/react';
 import { Bookmark, ChevronDown, MessageSquare, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+interface Community {
+    id: number;
+    name: string;
+    description?: string | null;
+    is_private?: boolean;
+    [key: string]: any;
+}
+
+interface ExtendedPost extends Post {
+    community: Community | null;
+}
 
 interface RedditCardProps {
     id: number;
@@ -13,7 +25,8 @@ interface RedditCardProps {
     url?: string;
     userId?: number;
     username?: string;
-    subreddit?: string;
+    community?: Community | null;
+    community_id?: number;
     votes?: number | Vote[];
     commentCount?: number;
     userAvatar?: string;
@@ -22,7 +35,6 @@ interface RedditCardProps {
     onShowMore?: (id: number) => void;
 }
 
-// Format relative time (e.g., "5 hours ago")
 const formatRelativeTime = (dateString: string | undefined) => {
     if (!dateString) return 'recently';
 
@@ -42,7 +54,8 @@ export const RedditCard: React.FC<RedditCardProps> = ({
     id,
     title,
     content,
-    subreddit = 'general',
+    community,
+    community_id,
     username = 'anonymous',
     votes = 0,
     commentCount = 0,
@@ -54,6 +67,59 @@ export const RedditCard: React.FC<RedditCardProps> = ({
     const [truncateContent, setTruncateContent] = useState(true);
     const contentPreviewLength = 150;
     const shouldTruncate = content.length > contentPreviewLength;
+
+    // Enhanced debugging
+    useEffect(() => {
+        console.group(`Post ${id} Debug Data`);
+        console.log('Complete post props:', {
+            id,
+            title,
+            content,
+            community,
+            community_id,
+            username,
+            votes,
+            commentCount,
+            created_at,
+        });
+
+        // Type checking for community
+        console.log('Community type:', community ? typeof community : 'undefined/null');
+        if (community) {
+            console.log('Community is array?', Array.isArray(community));
+            console.log('Community keys:', Object.keys(community));
+            console.log('Community values:', Object.values(community));
+            console.log('Community prototype:', Object.getPrototypeOf(community));
+            console.log('Community JSON string:', JSON.stringify(community));
+        }
+
+        // Community ID check
+        console.log('Community ID type:', typeof community_id);
+        console.log('Community ID value:', community_id);
+
+        console.groupEnd();
+    }, [id, title, community, community_id]);
+
+    // More robust community name determination
+    let communityName = 'general';
+
+    if (community) {
+        if (typeof community === 'object') {
+            if ('name' in community && community.name) {
+                communityName = community.name;
+                console.log(`Using community name from object: ${communityName}`);
+            } else {
+                console.log('Community object exists but has no name property!', community);
+            }
+        } else if (typeof community === 'string') {
+            communityName = community;
+            console.log(`Using community as string: ${communityName}`);
+        } else {
+            console.log(`Unknown community type: ${typeof community}`);
+        }
+    } else {
+        console.log(`No community object, using default: ${communityName}`);
+    }
 
     const voteCount = Array.isArray(votes) ? votes.reduce((count, vote) => count + (vote.is_upvote ? 1 : -1), 0) : votes;
 
@@ -79,9 +145,9 @@ export const RedditCard: React.FC<RedditCardProps> = ({
                         <CardHeader className="pb-2">
                             <div className="flex items-center space-x-2 text-sm text-gray-500">
                                 <Avatar className="h-5 w-5">
-                                    {userAvatar ? <AvatarImage src={userAvatar} alt={subreddit} /> : <AvatarFallback>r/</AvatarFallback>}
+                                    {userAvatar ? <AvatarImage src={userAvatar} alt={communityName} /> : <AvatarFallback>r/</AvatarFallback>}
                                 </Avatar>
-                                <span className="font-medium">r/{subreddit}</span>
+                                <span className="font-medium">r/{communityName}</span>
                                 <span>•</span>
                                 <span>Posted by u/{username}</span>
                                 <span>•</span>
@@ -127,7 +193,7 @@ export const RedditCard: React.FC<RedditCardProps> = ({
 };
 
 interface DashboardProps {
-    posts: Post[];
+    posts: ExtendedPost[];
     onShowPost?: (id: number) => void;
 }
 
@@ -149,7 +215,21 @@ const countVotes = (votes: Vote[] | undefined): number => {
 };
 
 export function DashboardComponent({ posts, onShowPost = () => {} }: DashboardProps) {
-    console.log('Dashboard posts:', posts);
+    // Enhanced dashboard logging
+    useEffect(() => {
+        console.group('Dashboard Component Debug');
+        console.log('Posts array length:', posts?.length);
+        console.log('First post complete data:', posts && posts.length > 0 ? posts[0] : 'No posts');
+        console.log('All posts community data:');
+
+        posts?.forEach((post, index) => {
+            console.log(`Post #${index} (ID: ${post.id}):`, {
+                community: post.community,
+                community_id: post.community_id,
+            });
+        });
+        console.groupEnd();
+    }, [posts]);
 
     if (!posts || posts.length === 0) {
         return <div className="p-4 text-center">No posts found. Be the first to create one!</div>;
@@ -164,7 +244,8 @@ export function DashboardComponent({ posts, onShowPost = () => {} }: DashboardPr
                     title={post.title}
                     content={post.content}
                     username={getUsernameString(post)}
-                    subreddit="general"
+                    community={post.community}
+                    community_id={post.community_id}
                     votes={post.votes ? countVotes(post.votes) : 0}
                     commentCount={post.comments_count || 0}
                     created_at={post.created_at}

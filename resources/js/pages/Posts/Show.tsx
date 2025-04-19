@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import type { Post, Vote } from '@/types/types';
+import type { ExtendedPost, Post, Vote } from '@/types/types';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, Award, Bookmark, MessageSquare, MoreHorizontal, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
@@ -16,7 +16,7 @@ interface Comment {
 }
 
 interface ShowProps {
-    post: Post;
+    post: ExtendedPost;
     comments?: Comment[];
 }
 
@@ -58,6 +58,11 @@ export default function Show({ post, comments = [] }: ShowProps) {
     const timePosted = formatRelativeTime(post.created_at);
     const [commentText, setCommentText] = useState('');
 
+    // Get community name or use fallback
+    const communityName = post.community?.name || 'general';
+    console.log('Post data:', post);
+    console.log('Community data:', post.community);
+
     return (
         <>
             <Head title={post.title} />
@@ -81,7 +86,7 @@ export default function Show({ post, comments = [] }: ShowProps) {
                             <Avatar className="h-8 w-8">
                                 <AvatarFallback className="bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">r/</AvatarFallback>
                             </Avatar>
-                            <span className="font-medium">r/{post.community_id || 'general'}</span>
+                            <span className="font-medium">r/{communityName}</span>
                             <span>•</span>
                             <span>{timePosted}</span>
                             <span>•</span>

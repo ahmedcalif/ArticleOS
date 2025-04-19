@@ -10,25 +10,36 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-  Route::get('dashboard', function () {
-    $posts = App\Models\Post::with(['user'])
-        ->withCount('comments')
-        ->orderBy('created_at', 'desc')
-        ->get();
-        
-    return Inertia::render('dashboard', [
-        'posts' => $posts
-    ]);
+Route::get('dashboard', function () {
+  $communities = App\Models\Community::all()->keyBy('id');
+  
+  $posts = App\Models\Post::with(['user', 'votes'])
+      ->withCount('comments')
+      ->orderBy('created_at', 'desc')
+      ->get();
+      
+  // Manually attach community data
+  $posts->each(function($post) use ($communities) {
+      $post->username = $post->user ? $post->user->name : null;
+      
+      if ($post->community_id && isset($communities[$post->community_id])) {
+          $post->community = [
+              'id' => $communities[$post->community_id]->id,
+              'name' => $communities[$post->community_id]->name
+          ];
+      } else {
+          $post->community = [
+              'id' => $post->community_id ?? 0,
+              'name' => $post->community_id ? "Community {$post->community_id}" : 'general'
+          ];
+      }
+  });
+      
+  return Inertia::render('dashboard', [
+      'posts' => $posts
+  ]);
 })->name('dashboard'); 
 });
-Route::get('/test-session', function () {
-    session(['test' => 'This is a test']);
-    return 'Session set';
-});
-Route::get('/read-session', function () {
-    return session('test', 'No session found');
-});
-
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 

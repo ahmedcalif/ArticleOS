@@ -37,6 +37,10 @@ export interface Post {
     votes?: Vote[];
 }
 
+export interface ExtendedPost extends Post {
+    community: Community;
+}
+
 export interface Vote {
     id: number;
     user_id: number;

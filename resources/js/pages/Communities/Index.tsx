@@ -18,7 +18,7 @@ interface Auth {
     user: User | null;
 }
 
-interface Community {
+export interface Community {
     id: number;
     name: string;
     description: string | null;
