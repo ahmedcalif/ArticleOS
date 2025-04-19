@@ -1,7 +1,8 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { router } from '@inertiajs/react';
-import { ArrowLeft, Award, Bookmark, MessageSquare, MoreHorizontal, Share2, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ArrowLeft, Award, Bookmark, Edit, MessageSquare, MoreHorizontal, Share2, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface Vote {
@@ -32,6 +33,8 @@ interface Post {
     updated_at?: string;
     votes?: Vote[] | number;
     username?: string | { name: string };
+    current_user_id?: number;
+    is_creator?: boolean;
     community?: Community;
     community_id?: number;
     comments_count?: number;
@@ -41,6 +44,12 @@ interface Post {
 interface PostDetailProps {
     post: Post;
     comments?: Comment[];
+    auth?: {
+        user?: {
+            id?: number;
+            name?: string;
+        } | null;
+    };
 }
 
 const formatRelativeTime = (dateString: string | undefined) => {
@@ -75,14 +84,73 @@ const countVotes = (votes: Vote[] | undefined): number => {
     }, 0);
 };
 
-const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [] }) => {
+const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [], auth }) => {
+    console.log('Props received:', { post, comments, auth });
     const username = getUsernameString(post);
     const voteCount = Array.isArray(post.votes) ? countVotes(post.votes) : post.votes || 0;
     const timePosted = formatRelativeTime(post.created_at);
     const [commentText, setCommentText] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedContent, setEditedContent] = useState(post.content);
+    const [editedTitle, setEditedTitle] = useState(post.title);
+    const isCreator = post.is_creator === true;
 
-    // Get community name or use fallback
+    console.log(`Auth comparison: ${auth?.user?.id} === ${post.user_id} = ${isCreator}`);
+
     const communityName = post.community?.name || 'general';
+
+    const handleDelete = () => {
+        if (confirm('Are you sure you want to delete this post?')) {
+            router.delete(`/posts/${post.id}`);
+        }
+    };
+
+    const handleEdit = () => {
+        setIsEditing(true);
+    };
+
+    const handleSave = () => {
+        router.patch(
+            `/posts/${post.id}`,
+            {
+                title: editedTitle,
+                content: editedContent,
+            },
+            {
+                onSuccess: () => setIsEditing(false),
+            },
+        );
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditedContent(post.content);
+        setEditedTitle(post.title);
+    };
+
+    const renderPostActions = () => {
+        if (!isCreator) return null;
+
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="flex items-center rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40">
+                    <DropdownMenuItem onClick={handleEdit}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    };
 
     return (
         <div className="min-h-screen">
@@ -111,9 +179,34 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [] }) => {
                         <span>Posted by u/{username}</span>
                     </div>
 
-                    <h1 className="mb-3 text-xl font-medium text-gray-900 dark:text-gray-100">{post.title}</h1>
-
-                    {post.content && <div className="mb-4 whitespace-pre-line text-gray-700 dark:text-gray-300">{post.content}</div>}
+                    {isEditing ? (
+                        <div className="mb-4 space-y-3">
+                            <input
+                                className="w-full rounded-md border border-gray-300 bg-white p-2 text-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                                value={editedTitle}
+                                onChange={(e) => setEditedTitle(e.target.value)}
+                            />
+                            <textarea
+                                className="w-full rounded-md border border-gray-300 bg-white p-2 text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                                value={editedContent}
+                                onChange={(e) => setEditedContent(e.target.value)}
+                                rows={6}
+                            />
+                            <div className="flex justify-end space-x-2">
+                                <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                                    Cancel
+                                </Button>
+                                <Button size="sm" onClick={handleSave}>
+                                    Save
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <h1 className="mb-3 text-xl font-medium text-gray-900 dark:text-gray-100">{post.title}</h1>
+                            {post.content && <div className="mb-4 whitespace-pre-line text-gray-700 dark:text-gray-300">{post.content}</div>}
+                        </>
+                    )}
 
                     <div className="border-b border-gray-200 pb-2 dark:border-gray-800">
                         <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
@@ -143,9 +236,7 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [] }) => {
                                 <span>Save</span>
                             </Button>
 
-                            <Button variant="ghost" size="sm" className="flex items-center rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
+                            {renderPostActions()}
                         </div>
                     </div>
                 </div>

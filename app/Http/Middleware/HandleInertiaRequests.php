@@ -43,9 +43,12 @@ public function share(Request $request): array
         ...parent::share($request),
         'name' => config('app.name'),
         'quote' => ['message' => trim($message), 'author' => trim($author)],
-        'auth' => [
-            'user' => $request->user(),
-        ],
+         'auth' => [
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                ] : null,
+            ], 
         
          'flash' => [
             'message' => $request->session()->get('success') ?: $request->session()->get('error') ?: $request->session()->get('info'),

@@ -13,7 +13,7 @@ interface PageProps {
     [key: string]: any;
 }
 
-interface FlashData {
+export interface FlashData {
     message: string | null;
     type: FlashType;
     isVisible: boolean;

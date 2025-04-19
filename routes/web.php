@@ -4,6 +4,7 @@ use App\Http\Controllers\CommunityController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\PostController as PostController;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -39,6 +40,16 @@ Route::get('dashboard', function () {
   ]);
 })->name('dashboard'); 
 });
+
+// Add this to a route or controller to check auth status
+Route::get('/check-auth', function () {
+    return [
+        'logged_in' => Auth::check(),
+        'user_id' => Auth::id(),
+        'user' => Auth::user(),
+    ];
+});
+
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 

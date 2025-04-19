@@ -1,3 +1,5 @@
+import { FlashData } from '@/hooks/use-flash';
+
 export interface User {
     id: number;
     name: string;
@@ -5,15 +7,11 @@ export interface User {
 }
 
 export interface PageProps {
-    auth: {
+    auth?: {
         user: User | null;
     };
-    errors: Record<string, string>;
-    flash?: {
-        success?: string;
-        error?: string;
-        info?: string;
-    };
+    errors?: Record<string, string>;
+    flash: FlashData;
 }
 
 export interface Community {
