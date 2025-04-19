@@ -45,15 +45,13 @@ class CommunityController extends Controller
         
       $community = Community::create([
     ...$validated,
-    'creator_id' => Auth::id()  // Changed from 'user_id'
+    'creator_id' => Auth::id() 
 ]); 
         
-        // Automatically add creator as a member and moderator
         $community->members()->attach(Auth::id(), ['is_moderator' => true]);
-        
-        return redirect()->route('communities.show', $community)
-            ->with('success', 'Community created successfully');
-    }
+ return redirect()->route('communities.show', $community)
+    ->with('success', 'Community was created successfully');       
+}
 
     /**
      * Display the specified community

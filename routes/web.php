@@ -21,6 +21,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     ]);
 })->name('dashboard'); 
 });
+Route::get('/test-session', function () {
+    session(['test' => 'This is a test']);
+    return 'Session set';
+});
+Route::get('/read-session', function () {
+    return session('test', 'No session found');
+});
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
