@@ -25,6 +25,26 @@ interface Community {
     name: string;
 }
 
+interface PostDetailProps {
+    post: Post;
+    comments?: Comment[];
+    auth?: {
+        // Keep as optional for compatibility
+        logged_in: boolean;
+        user_id: number | null;
+        user: {
+            id: number;
+            name: string;
+            username: string;
+            email: string;
+            email_verified_at: string | null;
+            created_at: string;
+            updated_at: string;
+        } | null;
+    };
+}
+
+// Also update the Post interface to include the new properties
 interface Post {
     id: number;
     title: string;
@@ -33,23 +53,13 @@ interface Post {
     updated_at?: string;
     votes?: Vote[] | number;
     username?: string | { name: string };
-    current_user_id?: number;
+    current_user_id?: number | null;
+    user_id?: number;
     is_creator?: boolean;
     community?: Community;
     community_id?: number;
     comments_count?: number;
     [key: string]: any;
-}
-
-interface PostDetailProps {
-    post: Post;
-    comments?: Comment[];
-    auth?: {
-        user?: {
-            id?: number;
-            name?: string;
-        } | null;
-    };
 }
 
 const formatRelativeTime = (dateString: string | undefined) => {
@@ -85,8 +95,27 @@ const countVotes = (votes: Vote[] | undefined): number => {
     }, 0);
 };
 
-const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [], auth }) => {
-    console.log('Props received:', { post, comments, auth });
+const PostDetail: React.FC<PostDetailProps> = (props) => {
+    const { post, comments = [] } = props;
+
+    const isLoggedIn = props.auth?.logged_in || post.is_logged_in || false;
+    const currentUserId = props.auth?.user_id || post.current_user_id || null;
+    const currentUser = props.auth?.user || null;
+
+    // Create a consistent auth object
+    const auth = {
+        logged_in: isLoggedIn,
+        user_id: currentUserId,
+        user: currentUser,
+    };
+
+    // Add this line to define isCreator
+    const isCreator = auth.logged_in && auth.user_id === post.user_id;
+
+    console.log('Constructed auth object:', auth);
+    console.log('Is creator?', isCreator);
+
+    console.log('Constructed auth object:', auth);
     const username = getUsernameString(post);
     const voteCount = Array.isArray(post.votes) ? countVotes(post.votes) : post.votes || 0;
     const timePosted = formatRelativeTime(post.created_at);
@@ -94,9 +123,9 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [], auth }) =>
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(post.content);
     const [editedTitle, setEditedTitle] = useState(post.title);
-    const isCreator = post.is_creator === true;
 
-    console.log(`Auth comparison: ${auth?.user?.id} === ${post.user_id} = ${isCreator}`);
+    const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+    const [editedCommentContent, setEditedCommentContent] = useState('');
 
     const communityName = post.community?.name || 'general';
 
@@ -129,6 +158,70 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [], auth }) =>
         setEditedTitle(post.title);
     };
 
+    const handleCommentSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        console.log('Submit clicked, auth state:', auth);
+
+        if (!commentText.trim()) return;
+
+        if (!auth.logged_in) {
+            console.error('Not logged in');
+            alert('You must be logged in to comment.');
+            return;
+        }
+
+        console.log('Posting comment as user:', auth.user);
+
+        router.post(
+            '/comments',
+            {
+                content: commentText,
+                post_id: post.id,
+            },
+            {
+                onSuccess: (page) => {
+                    setCommentText('');
+                    console.log('Comment posted successfully', page);
+                },
+                onError: (errors) => {
+                    console.error('Error posting comment:', errors);
+                    alert('Error posting comment: ' + JSON.stringify(errors));
+                },
+            },
+        );
+    };
+    const handleEditComment = (comment: Comment) => {
+        setEditingCommentId(comment.id);
+        setEditedCommentContent(comment.content);
+    };
+
+    const handleUpdateComment = (id: number) => {
+        router.patch(
+            `/comments/${id}`,
+            {
+                content: editedCommentContent,
+            },
+            {
+                onSuccess: () => {
+                    setEditingCommentId(null);
+                    setEditedCommentContent('');
+                },
+            },
+        );
+    };
+
+    const handleDeleteComment = (id: number) => {
+        if (confirm('Are you sure you want to delete this comment?')) {
+            router.delete(`/comments/${id}`);
+        }
+    };
+
+    const handleCancelEditComment = () => {
+        setEditingCommentId(null);
+        setEditedCommentContent('');
+    };
+
     const renderPostActions = () => {
         if (!isCreator) return null;
 
@@ -147,6 +240,34 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [], auth }) =>
                     <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400">
                         <Trash2 className="mr-2 h-4 w-4" />
                         <span>Delete</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    };
+
+    const renderCommentActions = (comment: Comment) => {
+        // Updated to use correct auth format
+        if (!auth?.logged_in || auth.user_id !== comment.user_id) return null;
+
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="p-1">
+                        <MoreHorizontal className="h-3 w-3" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40">
+                    <DropdownMenuItem onClick={() => handleEditComment(comment)}>
+                        <Edit className="mr-2 h-3 w-3" />
+                        <span className="text-xs">Edit</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                    >
+                        <Trash2 className="mr-2 h-3 w-3" />
+                        <span className="text-xs">Delete</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -243,23 +364,26 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [], auth }) =>
                 </div>
 
                 <div className="my-4">
-                    <div className="rounded-md border border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900">
-                        <textarea
-                            className="min-h-[100px] w-full resize-none rounded-t-md border-none bg-white p-3 text-sm text-gray-700 placeholder-gray-500 focus:outline-none dark:bg-gray-900 dark:text-gray-300"
-                            placeholder="What are your thoughts?"
-                            value={commentText}
-                            onChange={(e) => setCommentText(e.target.value)}
-                        ></textarea>
+                    <form onSubmit={handleCommentSubmit}>
+                        <div className="rounded-md border border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900">
+                            <textarea
+                                className="min-h-[100px] w-full resize-none rounded-t-md border-none bg-white p-3 text-sm text-gray-700 placeholder-gray-500 focus:outline-none dark:bg-gray-900 dark:text-gray-300"
+                                placeholder="What are your thoughts?"
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value)}
+                            ></textarea>
 
-                        <div className="flex justify-end rounded-b-md bg-gray-100 p-2 dark:bg-gray-800">
-                            <Button
-                                className="rounded-md bg-gray-200 px-4 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                                disabled={!commentText.trim()}
-                            >
-                                Comment
-                            </Button>
+                            <div className="flex justify-end rounded-b-md bg-gray-100 p-2 dark:bg-gray-800">
+                                <Button
+                                    type="submit"
+                                    className="rounded-md bg-gray-200 px-4 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                    disabled={!commentText.trim()}
+                                >
+                                    Comment
+                                </Button>
+                            </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
 
                 <div className="mb-4 flex items-center">
@@ -288,7 +412,28 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [], auth }) =>
                                     <span className="mx-1">•</span>
                                     <span>{formatRelativeTime(comment.created_at)}</span>
                                 </div>
-                                <div className="mb-2 text-gray-700 dark:text-gray-300">{comment.content}</div>
+
+                                {editingCommentId === comment.id ? (
+                                    <div className="mb-2 space-y-2">
+                                        <textarea
+                                            className="w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                                            value={editedCommentContent}
+                                            onChange={(e) => setEditedCommentContent(e.target.value)}
+                                            rows={3}
+                                        />
+                                        <div className="flex justify-end space-x-2">
+                                            <Button variant="outline" size="sm" onClick={handleCancelEditComment} className="px-2 py-1 text-xs">
+                                                Cancel
+                                            </Button>
+                                            <Button size="sm" onClick={() => handleUpdateComment(comment.id)} className="px-2 py-1 text-xs">
+                                                Save
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mb-2 text-gray-700 dark:text-gray-300">{comment.content}</div>
+                                )}
+
                                 <div className="flex items-center text-xs text-gray-500">
                                     <Button variant="ghost" size="sm" className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
                                         <ThumbsUp className="mr-1 h-3 w-3" />
@@ -306,9 +451,7 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, comments = [], auth }) =>
                                     <Button variant="ghost" size="sm" className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
                                         Share
                                     </Button>
-                                    <Button variant="ghost" size="sm" className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
-                                        <MoreHorizontal className="h-3 w-3" />
-                                    </Button>
+                                    {renderCommentActions(comment)}
                                 </div>
                             </div>
                         ))}

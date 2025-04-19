@@ -1,53 +1,54 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Post extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = [
         'title',
         'content',
         'user_id',
-        'community_id'
+        'community_id',
     ];
 
     /**
-     * Get the user who created the post
+     * Get the user that owns the post.
      */
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
     /**
-     * Get the community this post belongs to
+     * Get the community that the post belongs to.
      */
-    public function community(): BelongsTo
+    public function community()
     {
         return $this->belongsTo(Community::class);
     }
 
- public function comments()
-{
-    return $this->hasMany(Comment::class);
-} 
-public function votes()
-{
-    return $this->hasMany(Vote::class);
-}
+    /**
+     * Get the comments for the post.
+     */
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 
-// Method to get the vote count
-public function getVoteCountAttribute()
-{
-    return $this->votes->sum(function ($vote) {
-        return $vote->is_upvote ? 1 : -1;
-    });
+    /**
+     * Get the votes for the post.
+     */
+    public function votes()
+    {
+        return $this->hasMany(Vote::class);
+    }
 }
-}
-

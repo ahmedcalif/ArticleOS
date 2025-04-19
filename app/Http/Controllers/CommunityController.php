@@ -71,11 +71,11 @@ class CommunityController extends Controller
                 ->with('error', 'This community is private');
         }
         
-    return Inertia::render('Communities/Show', [
-    'community' => $community,
-    'isMember' => $community->members()->where('user_id', Auth::id())->exists(),
-    'isModerator' => $community->moderators()->where('user_id', Auth::id())->exists(),
-]); 
+        return Inertia::render('Communities/Show', [
+            'community' => $community,
+            'isMember' => $community->members()->where('user_id', Auth::id())->exists(),
+            'isModerator' => $community->moderators()->where('user_id', Auth::id())->exists(),
+        ]);
     }
 
     /**

@@ -1,28 +1,37 @@
 <?php
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Database\Factories\CommentFactory;
 
 class Comment extends Model
 {
-    use HasFactory; 
+    use HasFactory;
 
-    
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = [
         'content',
-        'user_id',
         'post_id',
-        'parent_id'
+        'user_id',
     ];
-  
+
     /**
-     * Create a new factory instance for the model.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     * Get the post that owns the comment.
      */
-    protected static function newFactory()
+    public function post()
     {
-        return CommentFactory::new();
+        return $this->belongsTo(Post::class);
+    }
+
+    /**
+     * Get the user that owns the comment.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

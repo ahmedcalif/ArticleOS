@@ -65,8 +65,8 @@ const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) =>
         day: 'numeric',
     });
 
-    // Check if current user is the creator
     const isCreator = auth.user && auth.user.id === community.creator_id;
+    console.log(isCreator);
 
     // Handle community deletion
     const handleDelete = () => {
