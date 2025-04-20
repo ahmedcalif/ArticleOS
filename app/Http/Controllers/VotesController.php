@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Vote as Vote;
+use Illuminate\Support\Facades\Auth;
 
 class VotesController extends Controller
 {
-    // VoteController.php
 
-// Store/Update - Upvote or downvote (toggle or create)
 public function vote(Request $request)
 {
     $validated = $request->validate([
@@ -17,27 +17,23 @@ public function vote(Request $request)
         'vote_type' => 'required|integer|in:-1,1', // -1 for downvote, 1 for upvote
     ]);
     
-    // Find existing vote
     $vote = Vote::where([
-        'user_id' => auth()->id(),
+        'user_id' => Auth::id(),
         'votable_id' => $validated['votable_id'],
         'votable_type' => $validated['votable_type'],
     ])->first();
     
     if ($vote) {
-        // If vote exists with the same type, remove it (toggle off)
         if ($vote->vote_type == $validated['vote_type']) {
             $vote->delete();
             $message = 'Vote removed';
         } else {
-            // If vote exists with different type, update it
             $vote->update(['vote_type' => $validated['vote_type']]);
             $message = 'Vote updated';
         }
     } else {
-        // Create new vote
         Vote::create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(), 
             'votable_id' => $validated['votable_id'],
             'votable_type' => $validated['votable_type'],
             'vote_type' => $validated['vote_type'],
@@ -48,7 +44,6 @@ public function vote(Request $request)
     return redirect()->back()->with('success', $message);
 }
 
-// Show votes for a specific item (Post or Comment)
 public function show(Request $request)
 {
     $validated = $request->validate([
@@ -61,7 +56,7 @@ public function show(Request $request)
         'votable_type' => $validated['votable_type'],
     ])->get();
     
-    $score = $votes->sum('vote_type'); // Sum will give net score
+    $score = $votes->sum('vote_type'); 
     
     return response()->json([
         'votes' => $votes,
@@ -71,13 +66,11 @@ public function show(Request $request)
     ]);
 }
 
-// Delete a vote
 public function destroy($id)
 {
     $vote = Vote::findOrFail($id);
     
-    // Check if user owns this vote
-    if (auth()->id() !== $vote->user_id) {
+    if (Auth::id()!== $vote->user_id) {
         return abort(403);
     }
     

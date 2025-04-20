@@ -20,25 +20,18 @@ class Community extends Model
     'creator_id'
 ];
 
-    /**
-     * Get the creator of the community
-     */
+  
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id');
     }
 
-    /**
-     * Get all posts in this community
-     */
+    
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
     }
 
-    /**
-     * Get all members of this community
-     */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'community_members')
@@ -46,9 +39,7 @@ class Community extends Model
                     ->withTimestamps();
     }
 
-    /**
-     * Get all moderators of this community
-     */
+    
     public function moderators(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'community_members')

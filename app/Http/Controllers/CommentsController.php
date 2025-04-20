@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Log;
 
 class CommentsController extends Controller
 {
-    // Index - Get all comments
     public function index()
     {
         $comments = Comment::with('user')->get();
@@ -17,11 +16,8 @@ class CommentsController extends Controller
             'comments' => $comments
         ]);
     }
-
-    // Store - Create a new comment
     public function store(Request $request)
     {
-        // Log the incoming request for debugging
         Log::info('Comment store request:', [
             'auth_check' => Auth::check(),
             'user_id' => Auth::id(),    
@@ -29,7 +25,6 @@ class CommentsController extends Controller
         ]);
 
         if (!Auth::check()) {
-            // Return a clear JSON response for API calls
             if ($request->expectsJson()) {
                 return response()->json([
                     'error' => 'Authentication required',
@@ -37,29 +32,24 @@ class CommentsController extends Controller
                 ], 401);
             }
             
-            // For regular requests, redirect back with a flash message
             return redirect()->back()->with('error', 'You must be logged in to comment.');
         }
         
-        // Validate the request
         $validated = $request->validate([
             'content' => 'required|string|max:10000',
             'post_id' => 'required|exists:posts,id',
-            'parent_id' => 'nullable|exists:comments,id', // Added for nested comments
+            'parent_id' => 'nullable|exists:comments,id', 
         ]);
         
-        // Create the comment with the authenticated user's ID
         $comment = Comment::create([
             'content' => $validated['content'],
             'post_id' => $validated['post_id'],
             'user_id' => Auth::id(),
-            'parent_id' => $validated['parent_id'] ?? null, // Add parent_id if it exists
+            'parent_id' => $validated['parent_id'] ?? null, 
         ]);
         
-        // Add the username for immediate display
         $comment->username = Auth::user()->name;
         
-        // Return a response based on what the client expects
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => 'Comment added successfully',
@@ -70,12 +60,10 @@ class CommentsController extends Controller
         return redirect()->back()->with('success', 'Comment added successfully');
     }
 
-    // Edit - Show edit form
     public function edit($id)
     {
         $comment = Comment::findOrFail($id);
         
-        // Check if the user is authorized to edit this comment
         if (Auth::id() !== $comment->user_id) { 
             return abort(403, 'Unauthorized action.'); 
         }
@@ -85,12 +73,10 @@ class CommentsController extends Controller
         ]);
     }
 
-    // Update - Process the update
     public function update(Request $request, $id)
     {
         $comment = Comment::findOrFail($id);
         
-        // Explicitly check if the user is authorized to update this comment
         if (Auth::id() !== $comment->user_id) { 
             return abort(403, 'Unauthorized action.'); 
         }
@@ -111,12 +97,10 @@ class CommentsController extends Controller
         return redirect()->back()->with('success', 'Comment updated successfully');
     }
 
-    // Delete comment
     public function destroy($id)
     {
         $comment = Comment::findOrFail($id);
         
-        // Explicitly check if the user is authorized to delete this comment
         if (Auth::id() !== $comment->user_id) { 
             return abort(403, 'Unauthorized action.'); 
         }

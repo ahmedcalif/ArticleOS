@@ -55,7 +55,7 @@ class CommunityController extends Controller
               ->withCount('comments')
               ->orderBy('created_at', 'desc');
     }, 'moderators'])
-    ->withCount('posts', 'members') // Make sure this is included
+    ->withCount('posts', 'members') 
     ->findOrFail($id);
 
     $community->is_member = $community->members()->where('user_id', Auth::id())->exists(); 

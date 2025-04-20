@@ -20,7 +20,6 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
         
-        // Get the authenticated user with explicit check
         $user = Auth::user();
         $isLoggedIn = !is_null($user);
         

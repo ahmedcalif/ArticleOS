@@ -115,7 +115,6 @@ public function store(Request $request)
     {
         $post = Post::findOrFail($id);
         
-        // Check if the current user is the creator of the post
         if (Auth::id() !== $post->user_id) {
             return abort(403, 'Unauthorized action.');
         }
@@ -130,18 +129,12 @@ public function store(Request $request)
         ]);
     }
 
-    /**
-     * Update the specified post in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
+    
     public function update(Request $request, $id)
     {
         $post = Post::findOrFail($id);
         
-        // Check if the current user is the creator of the post
+
         if (Auth::id() !== $post->user_id) {
             return abort(403, 'Unauthorized action.');
         }
@@ -157,17 +150,12 @@ public function store(Request $request)
         return redirect()->route('posts.show', $post->id);
     }
 
-    /**
-     * Remove the specified post from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
+   
     public function destroy($id)
     {
         $post = Post::findOrFail($id);
         
-        // Check if the current user is the creator of the post
+      
         if (Auth::id() !== $post->user_id) {
             return abort(403, 'Unauthorized action.');
         }

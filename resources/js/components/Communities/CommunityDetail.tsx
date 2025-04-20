@@ -34,7 +34,7 @@ interface Community {
     posts_count: number;
     members_count: number;
     created_at: string;
-    creator_id: number; // Added creator_id field
+    creator_id: number;
     is_member?: boolean;
     is_admin?: boolean;
     posts?: Post[];
@@ -68,19 +68,28 @@ const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) =>
     const isCreator = auth.user && auth.user.id === community.creator_id;
     console.log(isCreator);
 
-    // Handle community deletion
     const handleDelete = () => {
         if (confirm('Are you sure you want to delete this community? This action cannot be undone.')) {
             router.delete(route('communities.destroy', community.id));
         }
     };
 
-    // Handle join community
     const handleJoin = () => {
-        window.location.href = route('communities.join', community.id);
+        router.post(
+            route('communities.join', community.id),
+            {},
+            {
+                onSuccess: () => {
+                    router.reload();
+                },
+                onError: (errors) => {
+                    console.error(errors);
+                },
+            },
+        );
     };
 
-    // Handle leave community
+    <Button onClick={handleJoin}>Join Community</Button>;
     const handleLeave = () => {
         if (confirm('Are you sure you want to leave this community?')) {
             window.location.href = route('communities.leave', community.id);
@@ -113,7 +122,6 @@ const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) =>
                         </div>
 
                         <div className="flex gap-2">
-                            {/* Join/Leave Community Button */}
                             {auth.user && (
                                 <>
                                     {!community.is_member ? (

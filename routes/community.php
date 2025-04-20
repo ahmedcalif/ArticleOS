@@ -14,7 +14,9 @@ Route::put('/communities/{id}', [CommunityController::class, 'update'])->name('c
 Route::delete('/communities/{id}', [CommunityController::class, 'destroy'])->name('communities.destroy');
 
 // Community membership routes
-Route::post('/communities/{id}/join', [CommunityController::class, 'join'])->name('communities.join');
+Route::post('/communities/{community}/join', [CommunityController::class, 'join'])
+    ->name('communities.join')
+    ->middleware('auth');
 Route::delete('/communities/{id}/leave', [CommunityController::class, 'leave'])->name('communities.leave');
 
 // Moderator management routes
