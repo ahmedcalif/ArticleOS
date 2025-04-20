@@ -1,11 +1,28 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link, router } from '@inertiajs/react';
-import { Calendar, Globe, Lock, MessageSquare, Settings, Trash2, Users } from 'lucide-react';
-import React, { useState } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { AlertCircle, Calendar, CheckCircle2, Globe, Lock, MessageSquare, Settings, Trash2, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+
+interface Community {
+    id: number;
+    name: string;
+    description: string | null;
+    rules: string | null;
+    is_private: boolean;
+    posts_count: number;
+    members_count: number;
+    created_at: string;
+    creator_id: number;
+    is_member?: boolean;
+    is_admin?: boolean;
+    posts?: Post[];
+    members?: Member[];
+}
 
 interface Post {
     id: number;
@@ -25,22 +42,6 @@ interface Member {
     is_admin: boolean;
 }
 
-interface Community {
-    id: number;
-    name: string;
-    description: string | null;
-    rules: string | null;
-    is_private: boolean;
-    posts_count: number;
-    members_count: number;
-    created_at: string;
-    creator_id: number;
-    is_member?: boolean;
-    is_admin?: boolean;
-    posts?: Post[];
-    members?: Member[];
-}
-
 interface User {
     id: number;
     name: string;
@@ -51,13 +52,38 @@ interface Auth {
     user: User | null;
 }
 
-interface CommunityDetailProps {
-    community: Community;
-    auth: Auth;
+interface FlashData {
+    message: string | null;
+    type: 'success' | 'error' | 'info' | 'warning' | null;
 }
 
-const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) => {
+interface PageProps {
+    community: Community;
+    auth: Auth;
+    flash: FlashData;
+    [key: string]: any;
+}
+
+const CommunityDetail: React.FC = () => {
+    const { community, auth, flash } = usePage<PageProps>().props;
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    // Flash message state
+    const [flashVisible, setFlashVisible] = useState(false);
+
+    useEffect(() => {
+        // Show flash message if it exists
+        if (flash?.message) {
+            setFlashVisible(true);
+
+            // Auto-hide after 5 seconds
+            const timer = setTimeout(() => {
+                setFlashVisible(false);
+            }, 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
 
     const formattedDate = new Date(community.created_at).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -66,7 +92,6 @@ const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) =>
     });
 
     const isCreator = auth.user && auth.user.id === community.creator_id;
-    console.log(isCreator);
 
     const handleDelete = () => {
         if (confirm('Are you sure you want to delete this community? This action cannot be undone.')) {
@@ -89,15 +114,38 @@ const CommunityDetail: React.FC<CommunityDetailProps> = ({ community, auth }) =>
         );
     };
 
-    <Button onClick={handleJoin}>Join Community</Button>;
     const handleLeave = () => {
         if (confirm('Are you sure you want to leave this community?')) {
             window.location.href = route('communities.leave', community.id);
         }
     };
 
+    // Flash message styles
+    const typeToClass: Record<string, string> = {
+        success: 'bg-green-50 text-green-800 border-green-200',
+        error: 'bg-red-50 text-red-800 border-red-200',
+        warning: 'bg-yellow-50 text-yellow-800 border-yellow-200',
+        info: 'bg-blue-50 text-blue-800 border-blue-200',
+    };
+
+    const bgClass = flash?.type ? typeToClass[flash.type] : typeToClass.info;
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
+            {/* Flash message */}
+            {flashVisible && flash?.message && (
+                <Alert className={`mb-6 ${bgClass}`} variant="default">
+                    {flash.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                    <AlertDescription>{flash.message}</AlertDescription>
+                    <button className="absolute top-2 right-2 rounded-full p-1 hover:bg-gray-200" onClick={() => setFlashVisible(false)}>
+                        <span className="sr-only">Close</span>
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </Alert>
+            )}
+
             <div className="flex flex-col gap-8 md:flex-row">
                 <div className="flex-1">
                     <div className="mb-6 flex items-start justify-between">

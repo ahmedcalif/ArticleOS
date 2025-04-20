@@ -1,3 +1,4 @@
+import Flash from '@/components/Flash';
 import { Button } from '@/components/ui/button';
 import { Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
@@ -56,6 +57,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
                     </div>
                 </div>
             </header>
+            <Flash />
             <main className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
     );

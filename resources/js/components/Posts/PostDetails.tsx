@@ -1,10 +1,25 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowLeft, Award, Bookmark, Edit, MessageSquare, MoreHorizontal, Reply, Share2, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import {
+    AlertCircle,
+    ArrowLeft,
+    Award,
+    Bookmark,
+    CheckCircle2,
+    Edit,
+    MessageSquare,
+    MoreHorizontal,
+    Reply,
+    Share2,
+    ThumbsDown,
+    ThumbsUp,
+    Trash2,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Comment {
     id: number;
@@ -26,7 +41,12 @@ interface Community {
     name: string;
 }
 
-interface PostDetailProps {
+interface FlashData {
+    message: string | null;
+    type: 'success' | 'error' | 'info' | 'warning' | null;
+}
+
+interface PageProps {
     post: {
         id: number;
         title: string;
@@ -59,6 +79,8 @@ interface PostDetailProps {
             updated_at: string;
         } | null;
     };
+    flash: FlashData;
+    [key: string]: any;
 }
 
 const formatRelativeTime = (dateString: string | undefined) => {
@@ -358,18 +380,35 @@ const CommentComponent: React.FC<{
     );
 };
 
-const PostDetail: React.FC<PostDetailProps> = (props) => {
-    const { post, comments = [] } = props;
+const PostDetail: React.FC = () => {
+    const { post, comments = [], flash, auth: pageAuth } = usePage<PageProps>().props;
 
-    const isLoggedIn = props.auth?.logged_in || post.is_logged_in || false;
-    const currentUserId = props.auth?.user_id || post.current_user_id || null;
-    const currentUser = props.auth?.user || null;
+    const isLoggedIn = pageAuth?.logged_in || post.is_logged_in || false;
+    const currentUserId = pageAuth?.user_id || post.current_user_id || null;
+    const currentUser = pageAuth?.user || null;
 
     const auth = {
         logged_in: isLoggedIn,
         user_id: currentUserId,
         user: currentUser,
     };
+
+    // Flash message state
+    const [flashVisible, setFlashVisible] = useState(false);
+
+    useEffect(() => {
+        // Show flash message if it exists
+        if (flash?.message) {
+            setFlashVisible(true);
+
+            // Auto-hide after 5 seconds
+            const timer = setTimeout(() => {
+                setFlashVisible(false);
+            }, 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
 
     const isCreator = auth.logged_in && auth.user_id === post.user_id;
     const username = post.username || 'anonymous';
@@ -385,6 +424,16 @@ const PostDetail: React.FC<PostDetailProps> = (props) => {
 
     const communityName = post.community?.name || 'general';
     const nestedComments = nestComments(comments);
+
+    // Flash message styles
+    const typeToClass: Record<string, string> = {
+        success: 'bg-green-50 text-green-800 border-green-200',
+        error: 'bg-red-50 text-red-800 border-red-200',
+        warning: 'bg-yellow-50 text-yellow-800 border-yellow-200',
+        info: 'bg-blue-50 text-blue-800 border-blue-200',
+    };
+
+    const bgClass = flash?.type ? typeToClass[flash.type] : typeToClass.info;
 
     const handleDelete = () => {
         if (confirm('Are you sure you want to delete this post?')) {
@@ -542,7 +591,7 @@ const PostDetail: React.FC<PostDetailProps> = (props) => {
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => router.visit(document.referrer || '/dashboard')}
+                    onClick={() => router.visit('/dashboard')}
                     className="text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
                 >
                     <ArrowLeft className="mr-1 h-4 w-4" />
@@ -551,6 +600,20 @@ const PostDetail: React.FC<PostDetailProps> = (props) => {
             </div>
 
             <div className="mx-auto max-w-3xl px-4">
+                {/* Flash message */}
+                {flashVisible && flash?.message && (
+                    <Alert className={`mb-6 ${bgClass}`} variant="default">
+                        {flash.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                        <AlertDescription>{flash.message}</AlertDescription>
+                        <button className="absolute top-2 right-2 rounded-full p-1 hover:bg-gray-200" onClick={() => setFlashVisible(false)}>
+                            <span className="sr-only">Close</span>
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </Alert>
+                )}
+
                 <div className="pt-4 pb-2">
                     <div className="mb-1 flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                         <Avatar className="h-8 w-8">

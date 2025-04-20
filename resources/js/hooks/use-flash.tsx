@@ -1,33 +1,28 @@
-// useFlash.tsx`
 import { usePage } from '@inertiajs/react';
 
-type FlashType = 'success' | 'error' | 'warning' | 'info';
-
-interface FlashMessage {
+// Interface matching your existing flash data structure
+interface FlashData {
     message: string | null;
-    type: FlashType;
+    type: 'success' | 'error' | 'info' | 'warning' | null;
 }
 
-interface PageProps {
-    flash: FlashMessage;
-    [key: string]: any;
-}
-
-export interface FlashData {
+export interface UseFlashReturn {
     message: string | null;
-    type: FlashType;
-    isVisible: boolean;
+    type: 'success' | 'error' | 'info' | 'warning' | null;
     hasMessage: boolean;
 }
 
-export function useFlash(): FlashData {
+interface PageProps {
+    flash: FlashData;
+    [key: string]: any;
+}
+
+export function useFlash(): UseFlashReturn {
     const { flash } = usePage<PageProps>().props;
-    console.log('Flash data:', flash.message);
 
     return {
         message: flash?.message || null,
-        type: flash?.type || 'success',
-        isVisible: !!flash?.message,
+        type: flash?.type || null,
         hasMessage: !!flash?.message,
     };
 }

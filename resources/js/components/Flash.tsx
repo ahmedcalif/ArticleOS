@@ -1,36 +1,42 @@
-// Flash.tsx
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePage } from '@inertiajs/react';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-// Define the flash message type
-interface FlashMessage {
-    message?: string | null;
-    type?: 'success' | 'error' | 'warning' | 'info' | string;
+// This matches your current middleware flash data structure
+interface FlashData {
+    message: string | null;
+    type: 'success' | 'error' | 'info' | 'warning' | null;
 }
 
-// Add to the PageProps interface
+// Interface for page props
 interface PageProps {
-    flash?: FlashMessage;
+    flash: FlashData;
     [key: string]: any;
 }
 
 export default function Flash() {
-    const { flash = {} } = usePage<PageProps>().props;
+    const { flash } = usePage<PageProps>().props;
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
+        // Check if there's a flash message
         if (flash?.message) {
             setVisible(true);
+
+            // Auto-hide the message after 5 seconds
             const timer = setTimeout(() => {
                 setVisible(false);
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [flash?.message]);
+            }, 5000);
 
-    if (!flash?.message || !visible) return null;
+            return () => clearTimeout(timer);
+        } else {
+            setVisible(false);
+        }
+    }, [flash]);
+
+    // Don't render anything if there's no message or it's not visible
+    if (!visible || !flash?.message) return null;
 
     const typeToClass: Record<string, string> = {
         success: 'bg-green-50 text-green-800 border-green-200',
@@ -39,15 +45,34 @@ export default function Flash() {
         info: 'bg-blue-50 text-blue-800 border-blue-200',
     };
 
-    const bgClass = typeToClass[flash.type || 'success'] || typeToClass.success;
+    const bgClass = flash.type ? typeToClass[flash.type] : typeToClass.info;
+
+    const IconComponent = () => {
+        if (!flash.type) return <Info className="h-4 w-4" />;
+
+        switch (flash.type) {
+            case 'success':
+                return <CheckCircle2 className="h-4 w-4" />;
+            case 'error':
+                return <AlertCircle className="h-4 w-4" />;
+            case 'warning':
+                return <AlertTriangle className="h-4 w-4" />;
+            case 'info':
+                return <Info className="h-4 w-4" />;
+            default:
+                return <Info className="h-4 w-4" />;
+        }
+    };
 
     return (
         <Alert className={`fixed top-4 right-4 z-50 w-auto max-w-md shadow-md ${bgClass}`} variant="default">
-            {flash.type === 'success' && <CheckCircle2 className="h-4 w-4" />}
-            {flash.type !== 'success' && <AlertCircle className="h-4 w-4" />}
+            <IconComponent />
             <AlertDescription>{flash.message}</AlertDescription>
-            <button onClick={() => setVisible(false)} className="ml-4 text-sm focus:outline-none">
-                &times;
+            <button onClick={() => setVisible(false)} className="absolute top-2 right-2 rounded-full p-1 hover:bg-gray-200">
+                <span className="sr-only">Close</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
             </button>
         </Alert>
     );
