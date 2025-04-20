@@ -2,13 +2,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { router } from '@inertiajs/react';
+import axios from 'axios';
 import { ArrowLeft, Award, Bookmark, Edit, MessageSquare, MoreHorizontal, Reply, Share2, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-
-interface Vote {
-    is_upvote: boolean;
-    [key: string]: any;
-}
 
 interface Comment {
     id: number;
@@ -20,6 +16,9 @@ interface Comment {
     created_at?: string;
     updated_at?: string;
     replies?: Comment[];
+    upvotes_count?: number;
+    downvotes_count?: number;
+    current_user_vote?: -1 | 0 | 1;
 }
 
 interface Community {
@@ -28,7 +27,24 @@ interface Community {
 }
 
 interface PostDetailProps {
-    post: Post;
+    post: {
+        id: number;
+        title: string;
+        content: string;
+        created_at?: string;
+        updated_at?: string;
+        upvotes_count: number;
+        downvotes_count: number;
+        username?: string;
+        current_user_id?: number | null;
+        user_id?: number;
+        is_creator?: boolean;
+        community?: Community;
+        community_id?: number;
+        comments_count?: number;
+        current_user_vote?: -1 | 0 | 1;
+        is_logged_in?: boolean;
+    };
     comments?: Comment[];
     auth?: {
         logged_in: boolean;
@@ -45,23 +61,6 @@ interface PostDetailProps {
     };
 }
 
-interface Post {
-    id: number;
-    title: string;
-    content: string;
-    created_at?: string;
-    updated_at?: string;
-    votes?: Vote[] | number;
-    username?: string | { name: string };
-    current_user_id?: number | null;
-    user_id?: number;
-    is_creator?: boolean;
-    community?: Community;
-    community_id?: number;
-    comments_count?: number;
-    [key: string]: any;
-}
-
 const formatRelativeTime = (dateString: string | undefined) => {
     if (!dateString) return 'recently';
 
@@ -75,23 +74,6 @@ const formatRelativeTime = (dateString: string | undefined) => {
     if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`;
 
     return date.toLocaleDateString();
-};
-
-const getUsernameString = (post: Post): string => {
-    if (typeof post.username === 'string') {
-        return post.username;
-    } else if (post.username && 'name' in post.username) {
-        return post.username.name;
-    }
-    return 'anonymous';
-};
-
-const countVotes = (votes: Vote[] | undefined): number => {
-    if (!votes || votes.length === 0) return 0;
-
-    return votes.reduce((count, vote) => {
-        return count + (vote.is_upvote ? 1 : -1);
-    }, 0);
 };
 
 const nestComments = (flatComments: Comment[] | undefined): Comment[] => {
@@ -125,6 +107,9 @@ const CommentComponent: React.FC<{
     const [editedContent, setEditedContent] = useState(comment.content);
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [replyContent, setReplyContent] = useState('');
+    const [upvotes, setUpvotes] = useState(comment.upvotes_count || 0);
+    const [downvotes, setDownvotes] = useState(comment.downvotes_count || 0);
+    const [userVote, setUserVote] = useState<-1 | 0 | 1>(comment.current_user_vote || 0);
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -191,6 +176,73 @@ const CommentComponent: React.FC<{
         );
     };
 
+    const handleVote = async (voteType: 1 | -1) => {
+        if (!auth.logged_in) {
+            alert('You must be logged in to vote.');
+            return;
+        }
+
+        try {
+            // Calculate what will happen with this vote
+            let newUserVote: -1 | 0 | 1;
+            let upvotesDelta = 0;
+            let downvotesDelta = 0;
+
+            if (userVote === voteType) {
+                // Clicking the same button removes the vote
+                newUserVote = 0;
+                if (voteType === 1) {
+                    upvotesDelta = -1;
+                } else {
+                    downvotesDelta = -1;
+                }
+            } else if (userVote === 0) {
+                // New vote
+                newUserVote = voteType;
+                if (voteType === 1) {
+                    upvotesDelta = 1;
+                } else {
+                    downvotesDelta = 1;
+                }
+            } else {
+                // Changing vote type
+                newUserVote = voteType;
+                if (voteType === 1) {
+                    upvotesDelta = 1;
+                    downvotesDelta = -1;
+                } else {
+                    upvotesDelta = -1;
+                    downvotesDelta = 1;
+                }
+            }
+
+            // Optimistically update UI
+            setUserVote(newUserVote);
+            setUpvotes((prevUpvotes) => Math.max(0, prevUpvotes + upvotesDelta));
+            setDownvotes((prevDownvotes) => Math.max(0, prevDownvotes + downvotesDelta));
+
+            // Send request to server
+            const response = await axios.post('/vote', {
+                votable_id: comment.id,
+                votable_type: 'App\\Models\\Comment',
+                vote_type: voteType,
+            });
+
+            // Update with server response
+            const { upvotes: serverUpvotes, downvotes: serverDownvotes, user_vote: serverUserVote } = response.data;
+            setUpvotes(serverUpvotes);
+            setDownvotes(serverDownvotes);
+            setUserVote(serverUserVote);
+        } catch (error) {
+            console.error('Error voting:', error);
+            // Revert optimistic update on error
+            setUserVote(comment.current_user_vote || 0);
+            setUpvotes(comment.upvotes_count || 0);
+            setDownvotes(comment.downvotes_count || 0);
+            alert('Error processing vote. Please try again.');
+        }
+    };
+
     const canModifyComment = auth.logged_in && auth.user_id === comment.user_id;
 
     const renderCommentActions = () => {
@@ -250,13 +302,25 @@ const CommentComponent: React.FC<{
             )}
 
             <div className="mb-2 flex items-center text-xs text-gray-500">
-                <Button variant="ghost" size="sm" className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`p-1 hover:bg-gray-100 dark:hover:bg-gray-800 ${userVote === 1 ? 'text-blue-500' : ''}`}
+                    onClick={() => handleVote(1)}
+                >
                     <ThumbsUp className="mr-1 h-3 w-3" />
-                    <span>0</span>
+                    <span>{upvotes}</span>
                 </Button>
-                <Button variant="ghost" size="sm" className="mr-1 p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`mr-1 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 ${userVote === -1 ? 'text-red-500' : ''}`}
+                    onClick={() => handleVote(-1)}
+                >
                     <ThumbsDown className="h-3 w-3" />
+                    <span>{downvotes}</span>
                 </Button>
+
                 <Button variant="ghost" size="sm" className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={handleReplyClick}>
                     <Reply className="mr-1 h-3 w-3" />
                     Reply
@@ -308,8 +372,10 @@ const PostDetail: React.FC<PostDetailProps> = (props) => {
     };
 
     const isCreator = auth.logged_in && auth.user_id === post.user_id;
-    const username = getUsernameString(post);
-    const voteCount = Array.isArray(post.votes) ? countVotes(post.votes) : post.votes || 0;
+    const username = post.username || 'anonymous';
+    const [upvotes, setUpvotes] = useState(post.upvotes_count || 0);
+    const [downvotes, setDownvotes] = useState(post.downvotes_count || 0);
+    const [userVote, setUserVote] = useState<-1 | 0 | 1>(post.current_user_vote || 0);
     const timePosted = formatRelativeTime(post.created_at);
     const [commentText, setCommentText] = useState('');
     const [isEditing, setIsEditing] = useState(false);
@@ -377,6 +443,73 @@ const PostDetail: React.FC<PostDetailProps> = (props) => {
 
     const handleReplyClick = (parentId: number) => {
         setReplyingToId(replyingToId === parentId ? null : parentId);
+    };
+
+    const handleVote = async (voteType: 1 | -1) => {
+        if (!auth.logged_in) {
+            alert('You must be logged in to vote.');
+            return;
+        }
+
+        try {
+            // Calculate what will happen with this vote
+            let newUserVote: -1 | 0 | 1;
+            let upvotesDelta = 0;
+            let downvotesDelta = 0;
+
+            if (userVote === voteType) {
+                // Clicking the same button removes the vote
+                newUserVote = 0;
+                if (voteType === 1) {
+                    upvotesDelta = -1;
+                } else {
+                    downvotesDelta = -1;
+                }
+            } else if (userVote === 0) {
+                // New vote
+                newUserVote = voteType;
+                if (voteType === 1) {
+                    upvotesDelta = 1;
+                } else {
+                    downvotesDelta = 1;
+                }
+            } else {
+                // Changing vote type
+                newUserVote = voteType;
+                if (voteType === 1) {
+                    upvotesDelta = 1;
+                    downvotesDelta = -1;
+                } else {
+                    upvotesDelta = -1;
+                    downvotesDelta = 1;
+                }
+            }
+
+            // Optimistically update UI
+            setUserVote(newUserVote);
+            setUpvotes((prevUpvotes) => Math.max(0, prevUpvotes + upvotesDelta));
+            setDownvotes((prevDownvotes) => Math.max(0, prevDownvotes + downvotesDelta));
+
+            // Send request to server
+            const response = await axios.post('/vote', {
+                votable_id: post.id,
+                votable_type: 'App\\Models\\Post',
+                vote_type: voteType,
+            });
+
+            // Update with server response
+            const { upvotes: serverUpvotes, downvotes: serverDownvotes, user_vote: serverUserVote } = response.data;
+            setUpvotes(serverUpvotes);
+            setDownvotes(serverDownvotes);
+            setUserVote(serverUserVote);
+        } catch (error) {
+            console.error('Error voting:', error);
+            // Revert optimistic update on error
+            setUserVote(post.current_user_vote || 0);
+            setUpvotes(post.upvotes_count || 0);
+            setDownvotes(post.downvotes_count || 0);
+            alert('Error processing vote. Please try again.');
+        }
     };
 
     const renderPostActions = () => {
@@ -461,11 +594,26 @@ const PostDetail: React.FC<PostDetailProps> = (props) => {
 
                     <div className="border-b border-gray-200 pb-2 dark:border-gray-800">
                         <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                            <Button variant="ghost" size="sm" className="mr-2 flex items-center rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
-                                <ThumbsUp className="mr-1 h-4 w-4" />
-                                <span>{voteCount}</span>
-                                <ThumbsDown className="ml-1 h-4 w-4" />
-                            </Button>
+                            <div className="mr-2 flex items-center rounded-md">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`px-2 py-1 ${userVote === 1 ? 'text-blue-500' : ''}`}
+                                    onClick={() => handleVote(1)}
+                                >
+                                    <ThumbsUp className="h-4 w-4" />
+                                    <span className="ml-1">{upvotes}</span>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`px-2 py-1 ${userVote === -1 ? 'text-red-500' : ''}`}
+                                    onClick={() => handleVote(-1)}
+                                >
+                                    <ThumbsDown className="h-4 w-4" />
+                                    <span className="ml-1">{downvotes}</span>
+                                </Button>
+                            </div>
 
                             <Button variant="ghost" size="sm" className="mr-2 flex items-center rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
                                 <MessageSquare className="mr-1 h-4 w-4" />

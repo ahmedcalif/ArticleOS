@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentsController;
+use App\Http\Controllers\VotesController;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Post;
 
@@ -21,7 +22,6 @@ Route::get('/check-auth', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard
     Route::get('dashboard', function () {   
         $communities = App\Models\Community::all()->keyBy('id');
         
@@ -51,18 +51,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ]);
     })->name('dashboard');
     
-    // Resource routes
     Route::resource('posts', PostController::class);
     Route::resource('communities', CommunityController::class);
     
-    // Comment routes
+
     Route::post('/comments', [CommentsController::class, 'store']);
     Route::patch('/comments/{id}', [CommentsController::class, 'update']);
     Route::delete('/comments/{id}', [CommentsController::class, 'destroy']);
     Route::get('/comments', [CommentsController::class, 'index']);
     Route::get('/comments/{id}/edit', [CommentsController::class, 'edit']);
+
+    Route::post('/vote', [VotesController::class, 'vote']);
+    Route::get('/votes', [VotesController::class, 'show']);
 });
 
-// Include other route files
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

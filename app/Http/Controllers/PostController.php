@@ -58,58 +58,79 @@ public function store(Request $request)
         ->with('success', 'Post created successfully!');
 }
  
- public function show($id)
-{
-    $post = Post::with(['community', 'user', 'votes'])->findOrFail($id);
-    
-    $isLoggedIn = Auth::check();
-    $currentUser = Auth::user();
-    
-   $comments = Comment::with(['user' => function($query) {
-            $query->select('id', 'name', 'username'); // Only get needed fields
-        }])
-        ->where('post_id', $id)
-        ->orderBy('created_at', 'asc')
-        ->get()
-        ->map(function ($comment) {
-            return [
-                'id' => $comment->id,
-                'content' => $comment->content,
-                'post_id' => $comment->post_id,
-                'parent_id' => $comment->parent_id,
-                'user_id' => $comment->user_id,
-                'username' => $comment->user ? $comment->user->username ?? $comment->user->name : 'anonymous',
-                'created_at' => $comment->created_at,
-                'updated_at' => $comment->updated_at,
-            ];
-        })
-        ->toArray();
-    
-    return Inertia::render('Posts/Show', [
-        'post' => [
-            'id' => $post->id,
-            'title' => $post->title,
-            'content' => $post->content,
-            'created_at' => $post->created_at,
-            'updated_at' => $post->updated_at,
-            'user_id' => $post->user_id,
-            'username' => $post->user ? $post->user->name : 'anonymous',
-            'community' => $post->community,
-            'community_id' => $post->community_id,
-            'comments_count' => $post->comments_count,
-            'votes' => $post->votes,
-            'current_user_id' => $isLoggedIn ? $currentUser->id : null,
-            'is_creator' => $isLoggedIn && $currentUser && $currentUser->id === $post->user_id,
-            'is_logged_in' => $isLoggedIn
-        ],
-        'comments' => $comments, 
-        'auth' => [
-            'logged_in' => $isLoggedIn,
-            'user_id' => $isLoggedIn ? $currentUser->id : null,
-            'user' => $isLoggedIn ? $currentUser : null
-        ]
-    ]);
-} 
+public function show($id)
+    {
+        $post = Post::with(['community', 'user', 'votes'])->findOrFail($id);
+        
+        $isLoggedIn = Auth::check();
+        $currentUser = Auth::user();
+        
+        $comments = Comment::with(['user' => function($query) {
+                $query->select('id', 'name', 'username'); 
+            }, 'votes'])
+            ->where('post_id', $id)
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($comment) use ($isLoggedIn, $currentUser) {
+                $userVote = 0;
+                if ($isLoggedIn) {
+                    $vote = $comment->votes->where('user_id', $currentUser->id)->first();
+                    $userVote = $vote ? $vote->vote_type : 0;
+                }
+                
+                return [
+                    'id' => $comment->id,
+                    'content' => $comment->content,
+                    'post_id' => $comment->post_id,
+                    'parent_id' => $comment->parent_id,
+                    'user_id' => $comment->user_id,
+                    'username' => $comment->user ? $comment->user->username ?? $comment->user->name : 'anonymous',
+                    'created_at' => $comment->created_at,
+                    'updated_at' => $comment->updated_at,
+                    'upvotes_count' => $comment->votes->where('vote_type', 1)->count(),
+                    'downvotes_count' => $comment->votes->where('vote_type', -1)->count(),
+                    'current_user_vote' => $userVote
+                ];
+            })
+            ->toArray();
+        
+        $upvotesCount = $post->votes->where('vote_type', 1)->count();
+        $downvotesCount = $post->votes->where('vote_type', -1)->count();
+        
+        $userVote = 0;
+        if ($isLoggedIn) {
+            $vote = $post->votes->where('user_id', $currentUser->id)->first();
+            $userVote = $vote ? $vote->vote_type : 0;
+        }
+        
+        return Inertia::render('Posts/Show', [
+            'post' => [
+                'id' => $post->id,
+                'title' => $post->title,
+                'content' => $post->content,
+                'created_at' => $post->created_at,
+                'updated_at' => $post->updated_at,
+                'user_id' => $post->user_id,
+                'username' => $post->user ? $post->user->name : 'anonymous',
+                'community' => $post->community,
+                'community_id' => $post->community_id,
+                'comments_count' => $post->comments()->count(),
+                'upvotes_count' => $upvotesCount,
+                'downvotes_count' => $downvotesCount,
+                'current_user_vote' => $userVote,
+                'current_user_id' => $isLoggedIn ? $currentUser->id : null,
+                'is_creator' => $isLoggedIn && $currentUser && $currentUser->id === $post->user_id,
+                'is_logged_in' => $isLoggedIn
+            ],
+            'comments' => $comments, 
+            'auth' => [
+                'logged_in' => $isLoggedIn,
+                'user_id' => $isLoggedIn ? $currentUser->id : null,
+                'user' => $isLoggedIn ? $currentUser : null
+            ]
+        ]);
+    }
+      
     
     public function edit($id)
     {
