@@ -12,14 +12,6 @@ Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
-// This route are to debug don't worry about this 
-Route::get('/check-auth', function () {
-    return [
-        'logged_in' => Auth::check(),
-        'user_id' => Auth::id(),
-        'user' => Auth::user(),
-    ];
-});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {   

@@ -205,13 +205,11 @@ const CommentComponent: React.FC<{
         }
 
         try {
-            // Calculate what will happen with this vote
             let newUserVote: -1 | 0 | 1;
             let upvotesDelta = 0;
             let downvotesDelta = 0;
 
             if (userVote === voteType) {
-                // Clicking the same button removes the vote
                 newUserVote = 0;
                 if (voteType === 1) {
                     upvotesDelta = -1;
@@ -219,7 +217,6 @@ const CommentComponent: React.FC<{
                     downvotesDelta = -1;
                 }
             } else if (userVote === 0) {
-                // New vote
                 newUserVote = voteType;
                 if (voteType === 1) {
                     upvotesDelta = 1;
@@ -227,7 +224,6 @@ const CommentComponent: React.FC<{
                     downvotesDelta = 1;
                 }
             } else {
-                // Changing vote type
                 newUserVote = voteType;
                 if (voteType === 1) {
                     upvotesDelta = 1;
@@ -238,26 +234,21 @@ const CommentComponent: React.FC<{
                 }
             }
 
-            // Optimistically update UI
             setUserVote(newUserVote);
             setUpvotes((prevUpvotes) => Math.max(0, prevUpvotes + upvotesDelta));
             setDownvotes((prevDownvotes) => Math.max(0, prevDownvotes + downvotesDelta));
-
-            // Send request to server
             const response = await axios.post('/vote', {
                 votable_id: comment.id,
                 votable_type: 'App\\Models\\Comment',
                 vote_type: voteType,
             });
 
-            // Update with server response
             const { upvotes: serverUpvotes, downvotes: serverDownvotes, user_vote: serverUserVote } = response.data;
             setUpvotes(serverUpvotes);
             setDownvotes(serverDownvotes);
             setUserVote(serverUserVote);
         } catch (error) {
             console.error('Error voting:', error);
-            // Revert optimistic update on error
             setUserVote(comment.current_user_vote || 0);
             setUpvotes(comment.upvotes_count || 0);
             setDownvotes(comment.downvotes_count || 0);
@@ -393,15 +384,12 @@ const PostDetail: React.FC = () => {
         user: currentUser,
     };
 
-    // Flash message state
     const [flashVisible, setFlashVisible] = useState(false);
 
     useEffect(() => {
-        // Show flash message if it exists
         if (flash?.message) {
             setFlashVisible(true);
 
-            // Auto-hide after 5 seconds
             const timer = setTimeout(() => {
                 setFlashVisible(false);
             }, 5000);
@@ -425,7 +413,6 @@ const PostDetail: React.FC = () => {
     const communityName = post.community?.name || 'general';
     const nestedComments = nestComments(comments);
 
-    // Flash message styles
     const typeToClass: Record<string, string> = {
         success: 'bg-green-50 text-green-800 border-green-200',
         error: 'bg-red-50 text-red-800 border-red-200',
@@ -501,13 +488,11 @@ const PostDetail: React.FC = () => {
         }
 
         try {
-            // Calculate what will happen with this vote
             let newUserVote: -1 | 0 | 1;
             let upvotesDelta = 0;
             let downvotesDelta = 0;
 
             if (userVote === voteType) {
-                // Clicking the same button removes the vote
                 newUserVote = 0;
                 if (voteType === 1) {
                     upvotesDelta = -1;
@@ -515,7 +500,6 @@ const PostDetail: React.FC = () => {
                     downvotesDelta = -1;
                 }
             } else if (userVote === 0) {
-                // New vote
                 newUserVote = voteType;
                 if (voteType === 1) {
                     upvotesDelta = 1;
@@ -523,7 +507,6 @@ const PostDetail: React.FC = () => {
                     downvotesDelta = 1;
                 }
             } else {
-                // Changing vote type
                 newUserVote = voteType;
                 if (voteType === 1) {
                     upvotesDelta = 1;
@@ -534,26 +517,22 @@ const PostDetail: React.FC = () => {
                 }
             }
 
-            // Optimistically update UI
             setUserVote(newUserVote);
             setUpvotes((prevUpvotes) => Math.max(0, prevUpvotes + upvotesDelta));
             setDownvotes((prevDownvotes) => Math.max(0, prevDownvotes + downvotesDelta));
 
-            // Send request to server
             const response = await axios.post('/vote', {
                 votable_id: post.id,
                 votable_type: 'App\\Models\\Post',
                 vote_type: voteType,
             });
 
-            // Update with server response
             const { upvotes: serverUpvotes, downvotes: serverDownvotes, user_vote: serverUserVote } = response.data;
             setUpvotes(serverUpvotes);
             setDownvotes(serverDownvotes);
             setUserVote(serverUserVote);
         } catch (error) {
             console.error('Error voting:', error);
-            // Revert optimistic update on error
             setUserVote(post.current_user_vote || 0);
             setUpvotes(post.upvotes_count || 0);
             setDownvotes(post.downvotes_count || 0);
@@ -600,7 +579,6 @@ const PostDetail: React.FC = () => {
             </div>
 
             <div className="mx-auto max-w-3xl px-4">
-                {/* Flash message */}
                 {flashVisible && flash?.message && (
                     <Alert className={`mb-6 ${bgClass}`} variant="default">
                         {flash.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}

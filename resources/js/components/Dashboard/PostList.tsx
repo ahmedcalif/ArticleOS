@@ -86,7 +86,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     const contentPreviewLength = 150;
     const shouldTruncate = content.length > contentPreviewLength;
 
-    // Get community name
     let communityName = 'general';
     if (community && typeof community === 'object' && 'name' in community) {
         communityName = community.name;
