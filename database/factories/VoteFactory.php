@@ -19,6 +19,9 @@ class VoteFactory extends Factory
      */
     public function definition(): array
     {
+        // More realistic distribution - slightly more upvotes than downvotes
+        $voteValues = [1, 1, 1, 1, -1, -1, -1];
+        
         $votableType = $this->faker->randomElement(['post', 'comment']);
         $votableId = $votableType === 'post' 
             ? Post::factory() 
@@ -28,7 +31,7 @@ class VoteFactory extends Factory
             'user_id' => User::factory(),
             'votable_id' => $votableId,
             'votable_type' => $votableType,
-            'value' => $this->faker->randomElement([1, -1]), // Upvote or downvote
+            'value' => $this->faker->randomElement($voteValues), // More weighted to upvotes
             'created_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
         ];
     }

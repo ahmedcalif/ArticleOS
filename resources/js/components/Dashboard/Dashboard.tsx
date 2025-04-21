@@ -129,9 +129,9 @@ export const RedditCard: React.FC<RedditCardProps> = ({
 
     return (
         <div className="flex w-full justify-center px-4">
-            <Card className="w-full max-w-xl cursor-pointer transition-colors hover:border-gray-400">
+            <Card className="hover:border-border w-full max-w-xl cursor-pointer transition-colors">
                 <div className="flex">
-                    <div className="flex w-10 flex-col items-center rounded-l-lg bg-gray-50 py-2">
+                    <div className="bg-accent flex w-10 flex-col items-center rounded-l-lg py-2">
                         <Button variant="ghost" size="icon" className="h-6 w-6">
                             <ThumbsUp className="h-4 w-4" />
                         </Button>
@@ -144,7 +144,7 @@ export const RedditCard: React.FC<RedditCardProps> = ({
                     <div className="flex-1">
                         <Link href={`/posts/${id}`}>
                             <CardHeader className="pb-2">
-                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <div className="text-muted-foreground flex items-center space-x-2 text-sm">
                                     <Avatar className="h-5 w-5">
                                         {userAvatar ? <AvatarImage src={userAvatar} alt={communityName} /> : <AvatarFallback>r/</AvatarFallback>}
                                     </Avatar>
@@ -154,17 +154,17 @@ export const RedditCard: React.FC<RedditCardProps> = ({
                                     <span>•</span>
                                     <span>{timePosted}</span>
                                 </div>
-                                <h3 className="pt-1 text-lg font-medium">{title}</h3>
+                                <h3 className="text-foreground pt-1 text-lg font-medium">{title}</h3>
                             </CardHeader>
 
                             <CardContent className="pb-2">
-                                <p className="text-sm text-gray-700">
+                                <p className="text-foreground text-sm">
                                     {truncateContent && shouldTruncate ? `${content.substring(0, contentPreviewLength)}...` : content}
                                 </p>
                             </CardContent>
 
-                            <CardFooter className="flex flex-wrap border-t border-gray-100 pt-2 pb-2">
-                                <div className="flex flex-grow items-center space-x-4 text-gray-500">
+                            <CardFooter className="border-border flex flex-wrap border-t pt-2 pb-2">
+                                <div className="text-muted-foreground flex flex-grow items-center space-x-4">
                                     <Button variant="ghost" size="sm" className="flex items-center gap-1 text-xs">
                                         <MessageSquare className="h-4 w-4" />
                                         <span>{commentCount} Comments</span>
@@ -211,7 +211,7 @@ const countVotes = (votes: Vote[] | undefined): number => {
 
 export function DashboardComponent({ posts, onShowPost = () => {} }: DashboardProps) {
     if (!posts || posts.length === 0) {
-        return <div className="p-4 text-center">No posts found. Be the first to create one!</div>;
+        return <div className="text-foreground p-4 text-center">No posts found. Be the first to create one!</div>;
     }
 
     return (
